@@ -3,9 +3,13 @@
   file_0: 'ZipData2',
   file_1: 'ZipCnty',
   file_2: 'Canada%20Geo%20Data',
+  file_3: 'countries',
   file_path_end: '.csv?raw=true'
 };
 
+CREATE CONSTRAINT `imp_uniq_Country_id` IF NOT EXISTS
+FOR (n: `Country`)
+REQUIRE (n.`id`) IS UNIQUE;
 CREATE CONSTRAINT `imp_uniq_CityState_city_and_stateOrProvince` IF NOT EXISTS
 FOR (n: `CityState`)
 REQUIRE (n.`city`,n.`stateOrProvince`) IS UNIQUE;
@@ -24,8 +28,22 @@ REQUIRE (n.`geoId`) IS UNIQUE;
 
 // NODE load
 // ---------
-// Load nodes in batches, one node label at a time. Nodes will be created using a MERGE statement to ensure a node with the same label and ID property remains unique. Pre-existing nodes found by a MERGE statement will have their other properties set to the latest values encountered in a load file.
+// Load nodes in batches, one node label at a time. Nodes will be created using a MERGE statement to ensure a node with the same label and ID property remains unique.
+// Pre-existing nodes found by a MERGE statement will have their other properties set to the latest values encountered in a load file.
 // ---------
+//Country Nodes
+  LOAD CSV WITH HEADERS FROM ($file_path_root + $file_3 + $file_path_end) AS row
+  WITH row
+  WHERE NOT row.`alpha2` IS NULL
+  CALL {
+    WITH row
+    MERGE (n: `Country` { `id`: row.`alpha2`})
+    SET n.`name` = row.`name`
+    SET n.`alpha3` = row.`alpha3`
+    SET n.geoId = randomUUID()
+    SET n:Geolocation
+  };
+
 // United States of America Nodes
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row
@@ -37,6 +55,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     SET n.`id` = toUpper(row.`City` + ", " + row.`State`)
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'US'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
@@ -47,6 +68,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     MERGE (n: `StateOrProvince` { `id`: row.`State` })
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'US'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
@@ -58,6 +82,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     SET n.coordinate = point({longitude: toFloatOrNull(row.`Longitude`),latitude:toFloatOrNull(row.`Latitude`)})
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'US'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_1 + $file_path_end) AS row
@@ -69,6 +96,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     SET n.`name` = row.`CountyName`
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'US'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
 //Canadian Nodes
@@ -81,6 +111,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     SET n.`id` = toUpper(row.`CITY` + ", " + row.`STATE`)
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'CA'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_2 + $file_path_end) AS row
@@ -91,6 +124,9 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     MERGE (n: `StateOrProvince` { `id`: row.`STATE` })
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'CA'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_2 + $file_path_end) AS row
@@ -102,11 +138,15 @@ REQUIRE (n.`geoId`) IS UNIQUE;
     SET n.coordinate = point({longitude: toFloatOrNull(row.`LONG`),latitude:toFloatOrNull(row.`LAT`)})
     SET n.geoId = randomUUID()
     SET n:Geolocation
+    WITH n
+    MATCH (c:Country {id:'CA'})
+    MERGE (n)-[:IN_COUNTRY]->(c)
   } IN TRANSACTIONS OF 10000 ROWS;
 
 // RELATIONSHIP load
 // -----------------
-// Load relationships in batches, one relationship type at a time. Relationships are created using a MERGE statement, meaning only one relationship of a given type will ever be created between a pair of nodes.
+// Load relationships in batches, one relationship type at a time. Relationships are created using a MERGE statement,
+// meaning only one relationship of a given type will ever be created between a pair of nodes.
 // -----------------
 // United States of America Relationships
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
