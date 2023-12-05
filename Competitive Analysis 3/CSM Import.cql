@@ -39,8 +39,8 @@ REQUIRE (n.`id`) IS UNIQUE;
         , n.stateOrProvince = n.administrative_area
         , n.country = row.country
         , n.zipCode = n.zip
-        , n.effectiveDate = date(apoc.date.convertFormat(row.effective_date, "M/dd/yyyy", "yyyy-MM-dd"))
-        , n.expirationDate = date(apoc.date.convertFormat(row.expiration_date , "M/dd/yyyy", "yyyy-MM-dd"))
+        , n.effectiveDate = date(apoc.date.convertFormat(row.effective_date, "M/d/yyyy", "yyyy-MM-dd"))
+        , n.expirationDate = date(apoc.date.convertFormat(row.expiration_date , "M/d/yyyy", "yyyy-MM-dd"))
         , n.cifId = row.cif_number_identification_code
         , n.importExportFlag = row.import_export_flag
         , n.customsFlag = row.customs_flag
@@ -78,7 +78,7 @@ REQUIRE (n.`id`) IS UNIQUE;
   WHERE NOT row.`effective_date` IS NULL AND NOT row.country = "MX"
   CALL {
     WITH row
-    MERGE (n: `Date` { `id`: date(apoc.date.convertFormat(row.effective_date, "M/dd/yyyy", "yyyy-MM-dd"))})
+    MERGE (n: `Date` { `id`: date(apoc.date.convertFormat(row.effective_date, "M/d/yyyy", "yyyy-MM-dd"))})
   } IN TRANSACTIONS OF 10000 ROWS;
 
 // RELATIONSHIP load
@@ -103,7 +103,7 @@ REQUIRE (n.`id`) IS UNIQUE;
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
-    MATCH (target: `Date` { `id`: date(apoc.date.convertFormat(row.effective_date, "M/dd/yyyy", "yyyy-MM-dd"))})
+    MATCH (target: `Date` { `id`: date(apoc.date.convertFormat(row.effective_date, "M/d/yyyy", "yyyy-MM-dd"))})
     MERGE (source)-[r: `HAS_EFFECTIVE`]->(target)
   } IN TRANSACTIONS OF 10000 ROWS;
 
@@ -113,7 +113,7 @@ REQUIRE (n.`id`) IS UNIQUE;
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
-    MATCH (target: `Date` { `id`: date(apoc.date.convertFormat(row.expiration_date, "M/dd/yyyy", "yyyy-MM-dd"))})
+    MATCH (target: `Date` { `id`: date(apoc.date.convertFormat(row.expiration_date, "M/d/yyyy", "yyyy-MM-dd"))})
     MERGE (source)-[r: `HAS_EXPIRATION`]->(target)
   } IN TRANSACTIONS OF 10000 ROWS;
 
