@@ -66,7 +66,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row
-  WHERE NOT row.`scac` IS NULL
+  WHERE NOT row.`scac` IS NULL AND NOT row.country = "MX"
   CALL {
     WITH row
     MERGE (n: `Carrier` { `id`: row.`scac` })
@@ -75,7 +75,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row
-  WHERE NOT row.`effective_date` IS NULL
+  WHERE NOT row.`effective_date` IS NULL AND NOT row.country = "MX"
   CALL {
     WITH row
     MERGE (n: `Date` { `id`: date(apoc.date.convertFormat(row.effective_date, "M/dd/yyyy", "yyyy-MM-dd"))})
@@ -89,6 +89,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 // CSM Relationships
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `Carrier` { `id`: row.`scac`})
@@ -98,6 +99,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -107,6 +109,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -116,6 +119,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -125,6 +129,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -134,6 +139,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -143,6 +149,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
@@ -152,6 +159,7 @@ REQUIRE (n.`id`) IS UNIQUE;
 
   :auto LOAD CSV WITH HEADERS FROM ($file_path_root + $file_0 + $file_path_end) AS row
   WITH row 
+  WHERE NOT row.country = "MX"
   CALL {
     WITH row
     MATCH (source: `RailStation` { `id`: row.`station_master_id` })
