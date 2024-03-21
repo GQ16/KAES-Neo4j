@@ -1,0 +1,14 @@
+MATCH (pt:ProductType{id:$neodash_producttype_id})<-[:FOR_PRODUCTTYPE]-(m:MPI)-[:FOR_ORIGIN]->(o:Location{id:$neodash_location_id_1})
+WHERE 1=1
+  AND m.startDate <= date($neodash_ship_date)
+  AND m.endDate >= date($neodash_ship_date)
+RETURN m.startDate + ' - ' + m.endDate AS dateRange
+, m.last_update_date AS dateLogged
+, coalesce('$'+m.singularPrice,'$'+m.minPrice +'-'+m.maxPrice) AS price
+, m.marketer AS marketer
+, m.contact AS contact
+, m.party AS account
+, m.mode AS mode
+ORDER BY m.last_update_date DESC
+
+
