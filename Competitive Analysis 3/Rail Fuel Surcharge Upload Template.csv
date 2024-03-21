@@ -1,0 +1,20 @@
+carrier,effectiveDate,expirationDate,lastUpdateDate,updatedBy,fuelSurchargeRate,currency,originCountry,destinationCountry,productGroup
+BNSF,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.19,USD,US,US,ALL
+CN,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.5175,CAD,CA,CA,ALL
+CN,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.435,USD,CA,US,ALL
+CN,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.435,USD,US,US,ALL
+CPRS,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.4468,CAD,CA,CA,ALL
+CPRS,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.335,USD,US,US,ALL
+CPRS,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.335,USD,CA,US,ALL
+CSXT,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0,USD,US,US,DRY
+CSXT,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0,USD,US,US,LIQUID
+CSXT,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0,USD,US,US,AMMONIA
+CSXT,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0,USD,US,US,DEF
+CSXT,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.5,USD,US,US,METHANOL
+GWI,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.64,USD,US,US,ALL
+KCS,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.46,USD,US,US,ALL
+LSRC,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.5,USD,US,US,ALL
+NS,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.37,USD,US,US,ALL
+TCWR,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.38,USD,US,US,ALL
+UP,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.38,USD,US,US,ALL
+WSOR,2/1/2024,,2/21/2024 3:25,Abraham Rodriguez,0.6,USD,US,US,ALL
