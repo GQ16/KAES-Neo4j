@@ -19,7 +19,7 @@ CALL{
     //someone could add an owner and then remove it, hence the order
 	WITH l, $neodash_party_name_1 AS own
 	WHERE NOT isEmpty(own)
-    MATCH (p:Party {name: $neodash_party_name_1})
+    MATCH (p:Party {id: $neodash_party_name_1})
     WITH l, p
   
     WITH l, p
