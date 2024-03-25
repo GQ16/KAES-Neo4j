@@ -56,12 +56,11 @@ WITH products, validInterchanges
 
     WITH l,dz,collect(DISTINCT ors) + collect(DISTINCT olg) AS origins
         , collect(DISTINCT drs) + collect(DISTINCT dlg) AS destinations
-        , party.name AS occupant,  [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes
         , validInterchanges
 
     UNWIND origins AS origin
     UNWIND destinations As destination
-    WITH DISTINCT l,dz,origin, destination, validInterchanges, occupant, occupantTypes
+    WITH DISTINCT l,dz,origin, destination, validInterchanges
 CALL {
     WITH l,dz,origin, destination
 
@@ -95,7 +94,7 @@ CALL {
 
     RETURN DISTINCT p, [x IN nodes(p) WHERE x:RailRoute] AS routes
 }
-WITH l, dz, occupant, occupantTypes, p, routes
+WITH l, dz, p, routes
 //Filtering out paths that use a route that doesn't have a current rate
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
     UNWIND routes AS route
@@ -112,7 +111,7 @@ WITH l, dz, occupant, occupantTypes, p, routes
 	OPTIONAL MATCH (lqUOM:MassUOM {id:'ST'})-[cr:HAS_CONVERSION_RATE]->(:MassUOM{id: $neodash_massuom_id})
 	WHERE (NOT (f)-[:FOR_PRODUCTGROUP]->() OR (f)-[:FOR_PRODUCTGROUP]->(lpg))
 
-	WITH l, dz, p, route,  occupant, occupantTypes, f.rate*coalesce(fe.rate,1) AS fsc, coalesce(route.distance,0) AS miles, toLower(ra.uom) AS rateType
+	WITH l, dz, p, route, f.rate*coalesce(fe.rate,1) AS fsc, coalesce(route.distance,0) AS miles, toLower(ra.uom) AS rateType
 	, ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate, coalesce(lpg.railCarVol,1) AS carVol
 	
 	WITH *,
@@ -124,8 +123,8 @@ WITH l, dz, occupant, occupantTypes, p, routes
 			ELSE 0
         END AS perTonRate
 	
-	WITH l, dz, p, route, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel, miles, occupant, occupantTypes
-	WITH l, dz, p, route, {lowestRate:lowestRate, fsc:perTonFuel, miles:miles} AS routeCostMap, occupant, occupantTypes
+	WITH l, dz, p, route, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel, miles
+	WITH l, dz, p, route, {lowestRate:lowestRate, fsc:perTonFuel, miles:miles} AS routeCostMap
 	
     WITH p,
 	round(reduce(price = 0, x IN collect(routeCostMap) | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price

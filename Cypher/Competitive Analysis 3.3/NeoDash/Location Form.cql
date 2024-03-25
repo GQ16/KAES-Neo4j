@@ -17,8 +17,8 @@ CALL{
     WITH l
     OPTIONAL MATCH (l)<-[r:OWNS_LOCATION]-(:Party) DELETE r
     //someone could add an owner and then remove it, hence the order
-	WITH l, $neodash_party_name_1 AS own
-	WHERE NOT isEmpty(own)
+    WITH l, $neodash_party_name_1 AS own
+    WHERE NOT isEmpty(own)
     MATCH (p:Party {id: $neodash_party_name_1})
     WITH l, p
   
@@ -68,9 +68,9 @@ CALL{
       WHEN (isEmpty($neodash_latitude) or isEmpty($neodash_longitude))
       THEN z.coordinate
       ELSE point({
-		latitude:toFloat($neodash_latitude),
-		longitude:toFloat($neodash_longitude)
-		})
+        latitude:toFloat($neodash_latitude),
+        longitude:toFloat($neodash_longitude)
+		  })
     END
 }
 //Inbound Mode Rel
