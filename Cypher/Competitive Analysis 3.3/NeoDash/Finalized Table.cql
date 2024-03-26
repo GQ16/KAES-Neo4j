@@ -72,10 +72,8 @@ WITH products, validInterchanges
 		
 		WITH 
 		CASE m.type
-			WHEN 'DESTINATION' 
-			THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
-			WHEN 'ORIGIN' 
-			THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
+			WHEN 'DESTINATION' THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
+			WHEN 'ORIGIN' THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
 			ELSE NULL
 		END AS indPrice
 			, coalesce(exch.rate, 1) AS exchRate
@@ -111,13 +109,17 @@ CALL {
     MATCH p = 
     (origin)
     (
-        (s)<-[:`UREA_FROM`]-(:RailRoute)-[:`UREA_TO`]->(e) 
+        (s)<-[:`UREA_FROM`]-(rr1:RailRoute)-[:`UREA_TO`]->(e) 
         WHERE point.distance(destination.coordinate, e.coordinate) < point.distance(destination.coordinate, s.coordinate)
+        AND rr1.rule_11_at_destination_allowed 
+        AND NOT rr1.rule_11_at_origin_required
     ){1,1}
     (:StationGroup|RailStation)-[:HAS_STATION_IN|AT_INTERCHANGE]->(i)<-[:HAS_STATION_IN|AT_INTERCHANGE]-(:StationGroup|RailStation)
     (
-        (s2)<-[:`UREA_FROM`]-(:RailRoute)-[:`UREA_TO`]->(e2) 
+        (s2)<-[:`UREA_FROM`]-(rr2:RailRoute)-[:`UREA_TO`]->(e2) 
         WHERE point.distance(destination.coordinate, e2.coordinate) < point.distance(destination.coordinate, s2.coordinate)
+        AND rr2.rule_11_at_origin_allowed 
+        AND NOT rr2.rule_11_at_destination_required
     ){1,1}
     (destination)
     WHERE i IN validInterchanges
