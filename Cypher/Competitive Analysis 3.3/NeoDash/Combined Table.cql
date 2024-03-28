@@ -108,10 +108,12 @@ WITH l, dz, occupant, occupantTypes, p, routes
 	, (f)-[:IN_CURRENCY]->(fC)
 	MATCH (tC:Currency{id: $neodash_currency_id})
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
+	WHERE (NOT (f)-[:FOR_PRODUCTGROUP]->() OR (f)-[:FOR_PRODUCTGROUP]->(lpg))
+    AND f.expirationDate IS NOT NULL
+	
 	OPTIONAL MATCH (fC)-[fe:HAS_EXCHANGE_RATE]->(tC)
 	OPTIONAL MATCH (rC)-[re:HAS_EXCHANGE_RATE]->(tC)
 	OPTIONAL MATCH (lqUOM:MassUOM {id:'ST'})-[cr:HAS_CONVERSION_RATE]->(:MassUOM{id: $neodash_massuom_id})
-	WHERE (NOT (f)-[:FOR_PRODUCTGROUP]->() OR (f)-[:FOR_PRODUCTGROUP]->(lpg))
 
 	WITH l, dz, p, route,  occupant, occupantTypes, f.rate*coalesce(fe.rate,1) AS fsc, coalesce(route.distance,0) AS miles, toLower(ra.uom) AS rateType
 	, ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate, coalesce(lpg.railCarVol,1) AS carVol
