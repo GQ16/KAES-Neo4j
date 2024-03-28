@@ -61,8 +61,6 @@ CALL{
     WITH l, z
     
     MERGE (l)-[r:IN_ZIPCODE]->(z)
-    //SET l.latitude = z.latitude
-    //, l.longitude = z.longitudeWITH l,z,
     SET l.coordinate =
     CASE 
       WHEN (isEmpty($neodash_latitude) or isEmpty($neodash_longitude))

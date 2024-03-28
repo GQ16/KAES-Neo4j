@@ -9,7 +9,8 @@ CALL{
     with products
 
     MATCH (dca:Carrier)-[:OWNS_STATION]->(drs:RailStation)-[:IN_ZIPCODE]->(dz:ZipCode{id:$neodash_zipcode_id_2, country:$neodash_country_id_2})
-    MATCH (p:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-()<-[:HAS_OCCUPANT]-(l:Location)
+    MATCH (dz)-[:IN_STATE]->(ds)<-[:COMPETES_IN]-(l:Location)
+    MATCH (p:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-()<-[:HAS_OCCUPANT]-(l)
     MATCH (l)-[:IN_ZIPCODE]->()<-[:IN_ZIPCODE]-(ors:RailStation)//<-[:OWNS_STATION]-(oca:Carrier)
     MATCH (dca)-[:USES_INTERCHANGE]->(i:Interchange)
     WHERE p IN products 
@@ -50,6 +51,7 @@ WITH products, validInterchanges
     , (l)-[:IN_ZIPCODE]->(oz:ZipCode)<-[:IN_ZIPCODE]-(ors:RailStation)
     , (o)<-[:IS_OCCUPANT]-(party:Party)
     MATCH (drs:RailStation)-[:IN_ZIPCODE]->(dz:ZipCode{id:$neodash_zipcode_id_2, country:$neodash_country_id_2})
+    , (dz)-[:IN_STATE]->(:StateOrProvince)<-[:COMPETES_IN]-(o)
     WHERE p IN products 
     AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'RAIL'})
 
@@ -138,10 +140,12 @@ WITH l, dz, occupant, occupantTypes, p, routes, indication
 	, (f)-[:IN_CURRENCY]->(fC)
 	MATCH (tC:Currency{id: $neodash_currency_id})
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
+	WHERE (NOT (f)-[:FOR_PRODUCTGROUP]->() OR (f)-[:FOR_PRODUCTGROUP]->(lpg))
+    AND f.expirationDate IS NOT NULL
+	
 	OPTIONAL MATCH (fC)-[fe:HAS_EXCHANGE_RATE]->(tC)
 	OPTIONAL MATCH (rC)-[re:HAS_EXCHANGE_RATE]->(tC)
 	OPTIONAL MATCH (lqUOM:MassUOM {id:'ST'})-[cr:HAS_CONVERSION_RATE]->(:MassUOM{id: $neodash_massuom_id})
-	WHERE (NOT (f)-[:FOR_PRODUCTGROUP]->() OR (f)-[:FOR_PRODUCTGROUP]->(lpg))
 
 	WITH l, dz, p, route,  occupant, occupantTypes, f.rate*coalesce(fe.rate,1) AS fsc, coalesce(route.distance,0) AS miles, toLower(ra.uom) AS rateType
 	, ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate, coalesce(lpg.railCarVol,1) AS carVol, indication
