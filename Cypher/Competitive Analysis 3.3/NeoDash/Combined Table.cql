@@ -66,13 +66,7 @@ WITH products, validInterchanges
 CALL {
     WITH l,dz,origin, destination
 
-    MATCH p = 
-    (origin)
-    (
-        (s)<-[:`UREA_FROM`]-(:RailRoute)-[:`UREA_TO`]->(e) 
-        WHERE point.distance(destination.coordinate, e.coordinate) < point.distance(destination.coordinate, s.coordinate)
-    ){1,2}
-    (destination)
+    MATCH p = (origin)<-[:`UREA_FROM`]-(:RailRoute)-[:`UREA_TO`]->(destination)
     
     RETURN DISTINCT p, [x IN nodes(p) WHERE x:RailRoute] AS routes
 
