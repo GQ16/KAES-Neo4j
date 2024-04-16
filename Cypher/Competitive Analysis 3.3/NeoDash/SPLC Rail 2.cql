@@ -14,23 +14,14 @@ MATCH path =
 (s2:SPLC)
 
 WITH path, [r IN nodes(path) WHERE r:RailRoute] AS routes
-WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
-WITH path, routes
+WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->()) //may move into QPP to allow for R11 checks
+WITH path, routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
+WITH path, apoc.coll.pairsMin(splcList) AS splcPairs, routes
+CALL apoc.coll.zipToRows(splcPairs,routes) YIELD value AS splcPairRoute
+WITH path, splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
 
-CALL{
-    WITH path, routes
-    WITH path, routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
-    WITH path, apoc.coll.pairsMin(splcList) AS splcPairs, routes
-    CALL apoc.coll.zipToRows(splcPairs,routes) YIELD value AS splcPairRoute
-    WITH path, splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
-    MATCH (route)<-[:HAS_ROUTE]-(c:Carrier)
-    WITH path, splcPair[0] AS originSPLC, splcPair[1] AS destSPLC, c.id AS routeCarrier
-    MATCH (originSPLC)-[rdt:RAIL_DISTANCE_TO{carrier:routeCarrier}]-(destSPLC)
-    RETURN rdt.distance AS miles
-}
-CALL{
-    WITH path, routes
-    UNWIND routes AS route
+    MATCH (route)<-[:HAS_ROUTE]-(ca:Carrier)
+    WITH path, route, splcPair[0] AS originSPLC, splcPair[1] AS destSPLC, ca AS routeCarrier
 
     MATCH (tC:Currency{id: $neodash_currency_id})
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
@@ -48,8 +39,9 @@ CALL{
     OPTIONAL MATCH (fC)-[fe:HAS_EXCHANGE_RATE]->(tC)
     OPTIONAL MATCH (rC)-[re:HAS_EXCHANGE_RATE]->(tC)
     OPTIONAL MATCH (lqUOM:MassUOM {id:'ST'})-[cr:HAS_CONVERSION_RATE]->(:MassUOM{id: $neodash_massuom_id})
+    OPTIONAL MATCH (originSPLC)-[rdt:RAIL_DISTANCE_TO{carrier:routeCarrier.id}]-(destSPLC)
 
-    WITH path, route, f.rate*coalesce(fe.rate,1) AS fsc, miles, toLower(ra.uom) AS rateType
+    WITH path, route, f.rate*coalesce(fe.rate,1) AS fsc, toLower(ra.uom) AS rateType, coalesce(rdt.distance,10000) AS miles
     , ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate, coalesce(lpg.railCarVol,1) AS carVol
 
     WITH *,
@@ -59,17 +51,17 @@ CALL{
             ELSE 0
         END AS perTonRate
 
-    RETURN min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel
-}
+    WITH path, route, miles, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel
 
-WITH path, {lowestRate:lowestRate, fsc:perTonFuel, miles:miles} AS routeCostMap
 
-WITH path
-, nodes(path)[0].id AS origin
-, nodes(path)[-1].id AS dest
-, round(reduce(price = 0, x IN collect(routeCostMap) | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price
+return path, collect({lowestRate:lowestRate, fsc:perTonFuel, miles:miles}) AS routeCostMaps
 
-WITH origin, dest, min(price) AS freight 
+// WITH path
+// , nodes(path)[0].id AS origin
+// , nodes(path)[-1].id AS dest
+// , round(reduce(price = 0, x IN routeCostMaps | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price
+
+// RETURN origin, dest, min(price) AS freight 
 
 // RETURN origin, dest, "RAIL" AS mode, 
 //     CASE $neodash_logisticsproductgroup_name WHEN 'METHANOL' THEN round(freight,3) ELSE round(freight,2) END AS freight, 
