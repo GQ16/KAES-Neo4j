@@ -9,7 +9,7 @@ MATCH path =
 (s1:SPLC)
 (
     (ls:SPLC)<-[:IN_SPLC]-(o)<-[:UREA_FROM]-(:RailRoute)-[:UREA_TO]->(d)-[:IN_SPLC]->(le:SPLC)
-    WHERE point.distance(s2.coordinate, s1.coordinate) >= point.distance(ls.coordinate, le.coordinate)
+    // WHERE point.distance(s2.coordinate, s1.coordinate) >= point.distance(ls.coordinate, le.coordinate)
 ){1,2}
 (s2:SPLC)
 
@@ -42,7 +42,8 @@ WITH path, splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
     OPTIONAL MATCH (originSPLC)-[rdt:RAIL_DISTANCE_TO{carrier:routeCarrier.id}]-(destSPLC)
 
     WITH path, route, f.rate*coalesce(fe.rate,1) AS fsc, toLower(ra.uom) AS rateType, coalesce(rdt.distance,10000) AS miles
-    , ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate, coalesce(lpg.railCarVol,1) AS carVol
+    , ra.rate AS baseRate, coalesce(re.rate,1) AS rateCurExch, coalesce(cr.rate,1) AS massConvRate
+    , coalesce(lpg.railCarVol,1) AS carVol, routeCarrier.id AS carrier, [originSPLC.id, destSPLC.id] AS sp
 
     WITH *,
         CASE rateType 
@@ -51,10 +52,10 @@ WITH path, splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
             ELSE 0
         END AS perTonRate
 
-    WITH path, route, miles, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel
+    WITH path, route, miles, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel, sp, carrier
 
 
-return path, collect({lowestRate:lowestRate, fsc:perTonFuel, miles:miles}) AS routeCostMaps
+return path, collect({lowestRate:lowestRate, fsc:perTonFuel, miles:miles}) AS routeCostMaps, collect(sp), collect(carrier) 
 
 // WITH path
 // , nodes(path)[0].id AS origin
@@ -62,9 +63,3 @@ return path, collect({lowestRate:lowestRate, fsc:perTonFuel, miles:miles}) AS ro
 // , round(reduce(price = 0, x IN routeCostMaps | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price
 
 // RETURN origin, dest, min(price) AS freight 
-
-// RETURN origin, dest, "RAIL" AS mode, 
-//     CASE $neodash_logisticsproductgroup_name WHEN 'METHANOL' THEN round(freight,3) ELSE round(freight,2) END AS freight, 
-//     CASE $neodash_logisticsproductgroup_name WHEN 'METHANOL' THEN round(indication,3) ELSE round(indication,2) END AS indication, 
-//     CASE $neodash_logisticsproductgroup_name WHEN 'METHANOL' THEN round(freight + indication,3) ELSE round(freight + indication, 2) END AS deliveredPrice 
-// ORDER BY freight
