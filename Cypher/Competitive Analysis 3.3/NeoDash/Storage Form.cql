@@ -1,0 +1,5 @@
+MATCH (p:Party{name:$neodash_party_name_2})-[:IS_OCCUPANT]->(o:Occupant)<-[:HAS_OCCUPANT]-(l:Location{name:$neodash_location_name})
+MATCH (pg:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name_1})
+MERGE (o)-[r:HAS_PRODUCTGROUP]->(pg)
+SET r.qty = toIntegerOrNull($neodash_qty)
+, r.update_date = datetime()

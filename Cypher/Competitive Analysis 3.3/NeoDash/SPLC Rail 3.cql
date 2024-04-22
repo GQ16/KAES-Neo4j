@@ -1,4 +1,36 @@
 PROFILE
+//MARK: Products
+CALL{
+    MATCH (lpg:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name})
+    OPTIONAL MATCH p=(:LogisticsProductGroup)-[r:HAS_CHILD]->(lpg)
+    RETURN CASE WHEN r IS NULL THEN lpg ELSE nodes(p) END AS products
+}
+WITH products
+//MARK: Rail Finding Locations
+    MATCH (p:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-(o:Occupant)<-[:HAS_OCCUPANT]-(l:Location)
+    , (l)-[:IN_ZIPCODE]->(oz:ZipCode)<-[:IN_ZIPCODE]-(ors:RailStation)
+    , (o)<-[:IS_OCCUPANT]-(party:Party)
+    MATCH (drs:RailStation)-[:IN_ZIPCODE]->(dz:ZipCode)
+    // MATCH (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
+    WHERE p IN products
+    AND (
+        (dz.id = $neodash_zipcode_id_2 AND dz.country = $neodash_country_id_2)
+        OR l.id = $neodash_location_id
+    )
+
+    OPTIONAL MATCH (ors)-[:IN_STATION_GROUP]->(olg:StationGroup)
+    OPTIONAL MATCH (drs)-[:IN_STATION_GROUP]->(dlg:StationGroup)
+
+    WITH l,dz,collect(DISTINCT ors) + collect(DISTINCT olg) AS origins
+        , collect(DISTINCT drs) + collect(DISTINCT dlg) AS destinations
+        , party.name AS occupant,  [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes
+        , validInterchanges
+
+    UNWIND origins AS origin
+    UNWIND destinations As destination
+    WITH DISTINCT l,dz,origin, destination, validInterchanges, occupant, occupantTypes
+//MARK: Routes
+
 MATCH (s1:SPLC)
 MATCH (s2:SPLC)
 WHERE 1 = 1

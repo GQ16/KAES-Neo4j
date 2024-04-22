@@ -1,23 +1,11 @@
-MATCH (l:Location)-[:HAS_OCCUPANT]->(o:Occupant),
-(l)-[:IN_ZIPCODE]->(z:ZipCode),
-(l)-[:IN_CITY]->(c:CityState),
+MATCH (l:Location)-[:IN_CITY]->(c:CityState),
 (l)-[:IN_STATE]->(s:StateOrProvince),
+(l)-[:IN_ZIPCODE]->(z:ZipCode),
 (l)-[:IN_COUNTRY]->(co:Country),
 (l)-[:HAS_INBOUND]->(m1:Mode),
-(l)-[:HAS_OUTBOUND]->(m2:Mode),
-(o)<-[:IS_OCCUPANT]-(p1:Party),
-(o)-[:HAS_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
+(l)-[:HAS_OUTBOUND]->(m2:Mode)
 
 WHERE 1=1
-AND CASE 
-	WHEN isEmpty($party_id) THEN TRUE
-	ELSE 
-		p1.id = $party_id 
-		OR EXISTS{
-		MATCH (l)<-[:OWNS_LOCATION]-(p2:Party) 
-		WHERE p2.id = $party_id
-		}
-	END
 AND CASE
 	WHEN isEmpty($citystate_id) THEN TRUE
 	ELSE c.id = $citystate_id
@@ -31,26 +19,45 @@ AND CASE
 	ELSE s.id = $stateorprovince_id
 	END	
 AND CASE
-	WHEN isEmpty($occupant_type) THEN TRUE
-	ELSE $occupant_type IN labels(o)
-	END
-AND CASE
 	WHEN isEmpty($mode_id) THEN TRUE
 	ELSE m1.id = $mode_id
+	END
+AND CASE 
+	WHEN isEmpty($party_id) THEN TRUE
+	ELSE 
+		EXISTS{
+			MATCH (l)-[:HAS_OCCUPANT]->()<-[:IS_OCCUPANT]-(p1:Party)
+			WHERE p1.id = $party_id 
+		}
+		OR EXISTS{
+			MATCH (l)<-[:OWNS_LOCATION]-(p2:Party) 
+			WHERE p2.id = $party_id
+		}
+	END
+AND CASE
+	WHEN isEmpty($occupant_type) THEN TRUE
+	ELSE EXISTS{
+			MATCH (l)-[:HAS_OCCUPANT]->(o)
+			WHERE $occupant_type IN labels(o) 
+		}
 	END
 AND CASE
 	WHEN isEmpty($logisticsproductgroup_name) THEN TRUE
 	ELSE 
-		lpg.name = $logisticsproductgroup_name
+		EXISTS{
+			MATCH (l)-[:HAS_OCCUPANT]->()-[:HAS_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
+			WHERE lpg.name = $logisticsproductgroup_name
+		}
 		OR EXISTS{
-			MATCH (lpg)-[:HAS_CHILD]->(child:LogisticsProductGroup) 
+			MATCH (l)-[:HAS_OCCUPANT]->()-[:HAS_PRODUCTGROUP]->()-[:HAS_CHILD]->(child:LogisticsProductGroup) 
 			WHERE child.name = $logisticsproductgroup_name
 		}
 	END
 
-CALL {
-	WITH o
-	MATCH (mLPG:LogisticsProductGroup)<-[:FOR_PRODUCTGROUP]-(mpi:MPI)-[:FOR_OCCUPANT]->(o)
+CALL{
+	WITH l
+	
+	MATCH (mLPG:LogisticsProductGroup)<-[:FOR_PRODUCTGROUP]-(mpi:MPI)-[:FOR_OCCUPANT]->(o)<-[:HAS_OCCUPANT]-(l)
 	WHERE mLPG.name = $logisticsproductgroup_name
 	AND CASE 
 		WHEN isEmpty($ship_date) THEN mpi.startDate <= date() <= mpi.endDate 
@@ -67,8 +74,20 @@ CALL {
 		ELSE NULL
 	END AS indPrice
 }
-	
-RETURN "locations" AS pinType,
+CALL{
+	WITH l
+	MATCH (l)-[:HAS_OCCUPANT]->(o)
+	UNWIND labels(o) AS occType
+	RETURN collect(distinct occType) AS occTypes
+}
+
+RETURN 
+CASE
+	WHEN "Koch" IN occTypes AND "Competitor" IN occTypes THEN "kochAndCompetitor"
+	WHEN "Koch" IN occTypes THEN "koch"
+	WHEN "Competitor" IN occTypes THEN "competitor"
+	ELSE "customer"
+END AS pinType,
 collect(DISTINCT{
 	name:l.name,
 	id:l.id,

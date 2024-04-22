@@ -55,11 +55,9 @@ WITH path, splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
     WITH path, route, miles, min(perTonRate) AS lowestRate, fsc/carVol AS perTonFuel, sp, carrier
 
 
-return path, collect({lowestRate:lowestRate, fsc:perTonFuel, miles:miles}) AS routeCostMaps, collect(sp), collect(carrier) 
+WITH path, collect({lowestRate:round(lowestRate,3), fsc:round(perTonFuel,6), miles:toFloat(miles)}) AS routeCostMaps, collect(sp) AS splcPairs, collect(carrier) AS carriers
 
-// WITH path
-// , nodes(path)[0].id AS origin
-// , nodes(path)[-1].id AS dest
-// , round(reduce(price = 0, x IN routeCostMaps | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price
+WITH path, routeCostMaps, splcPairs, carriers 
+, round(reduce(price = 0, x IN routeCostMaps | price + x.lowestRate + (x.fsc * x.miles) ),2) AS price
 
-// RETURN origin, dest, min(price) AS freight 
+RETURN routeCostMaps, splcPairs[0] AS leg1, splcPairs[1] AS leg2, carriers, price
