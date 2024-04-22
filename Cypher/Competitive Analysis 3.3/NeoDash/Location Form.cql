@@ -17,8 +17,8 @@ CALL{
     WITH l
     OPTIONAL MATCH (l)<-[r:OWNS_LOCATION]-(:Party) DELETE r
     //someone could add an owner and then remove it, hence the order
-    WITH l, $neodash_party_name_1 AS own
-    WHERE NOT isEmpty(own)
+	WITH l, $neodash_party_name_1 AS own
+	WHERE NOT isEmpty(own)
     MATCH (p:Party {id: $neodash_party_name_1})
     WITH l, p
   
@@ -61,14 +61,16 @@ CALL{
     WITH l, z
     
     MERGE (l)-[r:IN_ZIPCODE]->(z)
+    //SET l.latitude = z.latitude
+    //, l.longitude = z.longitudeWITH l,z,
     SET l.coordinate =
     CASE 
       WHEN (isEmpty($neodash_latitude) or isEmpty($neodash_longitude))
       THEN z.coordinate
       ELSE point({
-        latitude:toFloat($neodash_latitude),
-        longitude:toFloat($neodash_longitude)
-		  })
+		latitude:toFloat($neodash_latitude),
+		longitude:toFloat($neodash_longitude)
+		})
     END
 }
 //Inbound Mode Rel
@@ -98,4 +100,15 @@ CALL{
   WITH l, m
   MERGE (l)-[r1:HAS_OUTBOUND]->(m)
   SET r1.update_date = datetime()
+}
+//SPLC Rel
+CALL{
+    WITH l
+    MATCH (s:SPLC {id: $neodash_splc_id})
+    WITH l, s
+    
+    OPTIONAL MATCH (l)-[r:IN_SPLC]->(:SPLC) DELETE r
+    WITH l, s
+
+    MERGE (l)-[:IN_SPLC]->(s)
 }
