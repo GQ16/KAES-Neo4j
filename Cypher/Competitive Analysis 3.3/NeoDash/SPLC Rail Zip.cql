@@ -1,17 +1,14 @@
 PROFILE
 //MARK: Products
-CALL{
     MATCH (lpg:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name})
     OPTIONAL MATCH p=(:LogisticsProductGroup)-[r:HAS_CHILD]->(lpg)
-    RETURN CASE WHEN r IS NULL THEN lpg ELSE nodes(p) END AS products
-}
-WITH products
+    WITH CASE WHEN r IS NULL THEN lpg ELSE nodes(p) END AS products
+
 //MARK: Rail Finding Locations
     MATCH (p:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-(o:Occupant)<-[:HAS_OCCUPANT]-(l:Location)
-    , (l)-[:IN_ZIPCODE]->(oz:ZipCode)<-[:IN_ZIPCODE]-(ors:RailStation)
+    , (l)-[:IN_SPLC]->(s:SPLC)
     , (o)<-[:IS_OCCUPANT]-(party:Party)
-    MATCH (drs:RailStation)-[:IN_ZIPCODE]->(dz:ZipCode)
-    // MATCH (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
+    // , (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
     WHERE p IN products
     AND (
         (dz.id = $neodash_zipcode_id_2 AND dz.country = $neodash_country_id_2)
