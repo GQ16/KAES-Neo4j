@@ -24,13 +24,17 @@ PROFILE
 
     WITH [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
-    //MARK: Is Valid Route
+    //MARK: Get Rates & Is Valid Route
     CALL{
         WITH routes
         WITH routes[0] AS route1, routes[1] AS route2
         MATCH (route1)-[:HAS_CURRENT_RATE]->(rate1:RailRate)
         OPTIONAL MATCH (route2)-[:HAS_CURRENT_RATE]->(rate2:RailRate)
-        RETURN [rate1, rate2] AS rates, 
+        RETURN 
+        CASE 
+            WHEN route2 IS NULL THEN [rate1]
+            ELSE [rate1, rate2]
+        END AS rates, 
         CASE 
             WHEN route2 IS NULL 
                 THEN NOT rate1.rule_11_at_origin_required
@@ -50,7 +54,7 @@ PROFILE
     WITH routes, splcList, rates, isValid
     WHERE isValid
 
-    WITH routes, splcList, rates, 
+    WITH routes, splcList, rates
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 
     //MARK: Get Fuel
@@ -66,7 +70,13 @@ PROFILE
             OR (f)-[:FOR_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
         )
         AND f.expirationDate IS NULL
-        RETURN collect({rate:f.rate/lpg.railCarVol, carrier:ca.id, currency:fC.id}) AS fuels
+        RETURN collect({
+            baseFuel: f.rate, 
+            carVol: lpg.railCarVol,
+            rate:f.rate/lpg.railCarVol, 
+            carrier:ca.id, 
+            currency:fC.id
+        }) AS fuels
     }
     //MARK: Get Miles
     CALL{
@@ -81,34 +91,39 @@ PROFILE
         OPTIONAL MATCH (originSPLC)-[rdt:RAIL_DISTANCE_TO{carrier:ca.id}]-(destSPLC)
 
         //Get one mileage per route node
-        WITH route, min(coalesce(rdt.distance,10000))
+        WITH route, min(coalesce(rdt.distance,10000)) AS dist
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
-    WITH
-        , ra.rate AS baseRate
-        , lpg.railCarVol AS carVol
-        , routeCarrier.id AS carrier
-        , ra.car_owner_carrier AS isPublic
-        , ra.car_owner_shipper AS isPrivate
+    WITH fuels, miles, [s IN splcList|properties(s)] AS splcs
+        , CASE WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) THEN coalesce(rates[0].min_cars, 1) ELSE rates[1].min_cars END AS minCars
+        , [r IN rates| {
+            baseRate: r.rate,
+            rateType: r.uom,
+            carVol: lpg.railCarVol,
+            perTonRate: CASE toLower(r.uom)
+                WHEN 'ton' THEN r.rate
+                WHEN 'car' THEN r.rate / lpg.railCarVol
+                ELSE 0
+            END,
+            currency: r.currency,
+            carrier: r.carrier
+        }] AS rateMaps
+        //since the whole path has already been checked, we can just take the value of the first
+        , rates[0].car_owner_carrier AS isPublic
+        , rates[0].car_owner_shipper AS isPrivate
 
-    WITH miles, fsc/carVol AS perTonFuel, carrier, splcPair, isPublic, isPrivate,
-    CASE rateType 
-        WHEN 'ton' THEN baseRate
-        WHEN 'car' THEN baseRate / carVol
-        ELSE 0
-    END AS perTonRate
+    WITH *, 
+        [x IN range(0,size(rateMaps)-1)|
+            {
+                rate: round(rateMaps[x].perTonRate,3),
+                fsc: round(fuels[x].rate, 6),
+                miles: toFloat(miles[x])
+            }
+        ] AS legs
 
-    WITH {
-        perTonRate:perTonRate,
-        perTonFuel:perTonFuel,
-        miles:miles,
-        carrier:carrier,
-        splcPair:splcPair,
-        isPublic:isPublic,
-        isPrivate: isPrivate
-    } AS routeInfo
+    WITH splcs, isPublic, isPrivate, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
+    ORDER BY price
+    WITH splcs, isPublic, isPrivate, collect(price)[0] AS lowestPrice
 
-    RETURN collect(routeInfo) AS routeInfoList
-
-return path, routeInfoList //limit 5
+RETURN *
