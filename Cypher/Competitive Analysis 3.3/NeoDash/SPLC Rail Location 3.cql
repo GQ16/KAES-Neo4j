@@ -4,7 +4,7 @@ PROFILE
     MATCH (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol:Location)
     , (ol)-[:IN_SPLC]->(s1:SPLC)
     , (occ)-[:COMPETES_IN]->(st)
-    // , (occ)<-[:IS_OCCUPANT]-(party:Party)
+    , (occ)<-[:IS_OCCUPANT]-(party:Party)
     // , (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
     WHERE 1= 1
     AND (
@@ -17,12 +17,13 @@ PROFILE
     MATCH path = 
     (s1:SPLC)
     (
-        (ls:SPLC)<-[:IN_SPLC]-(o)<-[:UREA_FROM]-(:RailRoute)-[:UREA_TO]->(d)-[:IN_SPLC]->(le:SPLC)
+        (ls:SPLC)<-[:IN_SPLC]-(cc)<-[:UREA_FROM]-(:RailRoute)-[:UREA_TO]->(d)-[:IN_SPLC]->(le:SPLC)
         // WHERE point.distance(s2.coordinate, s1.coordinate) >= point.distance(ls.coordinate, le.coordinate)
     ){1,2}
     (s2:SPLC)
 
-    WITH [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
+    WITH ol.name AS originLocationName, party.name AS occPartyName, occ
+    , [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
     //MARK: Get Rates & Is Valid Route
     CALL{
@@ -51,10 +52,10 @@ PROFILE
                 )
         END AS isValid
     }
-    WITH routes, splcList, rates, isValid
+    WITH originLocationName, occPartyName,  occ, routes, splcList, rates, isValid
     WHERE isValid
 
-    WITH routes, splcList, rates
+    WITH originLocationName, occPartyName,  occ, routes, splcList, rates
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 
     //MARK: Get Fuel
@@ -95,8 +96,12 @@ PROFILE
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
-    WITH fuels, miles, [s IN splcList|properties(s)] AS splcs
-        , CASE WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) THEN coalesce(rates[0].min_cars, 1) ELSE rates[1].min_cars END AS minCars
+    WITH originLocationName, occPartyName,  occ, fuels, miles, [s IN splcList|properties(s)] AS splcs
+        , CASE 
+            WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) 
+            THEN coalesce(rates[0].min_cars, 1) 
+            ELSE rates[1].min_cars 
+        END AS minCars
         , [r IN rates| {
             baseRate: r.rate,
             rateType: r.uom,
@@ -122,8 +127,34 @@ PROFILE
             }
         ] AS legs
 
-    WITH splcs, isPublic, isPrivate, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
+    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
     ORDER BY price
-    WITH splcs, isPublic, isPrivate, collect(price)[0] AS lowestPrice
+    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, collect(price)[0] AS lowestPrice
+	CALL{
+		WITH occ
+		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
+		, (m)-[:FOR_MODE]->(:Mode{id:'RAIL'})
+		WHERE m.startDate <= $neodash_ship_date <= m.endDate
+		
+		WITH m
+		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
 
+		// OPTIONAL MATCH (m)-[:IN_CURRENCY]->(mpiC:Currency)
+		// OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE]->(fC:Currency{id: $neodash_currency_id})
+		// OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
+		// OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
+		
+		WITH 
+		CASE m.type
+			WHEN 'DESTINATION' 
+			THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
+			WHEN 'ORIGIN' 
+			THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
+			ELSE NULL
+		END AS indPrice
+			// , coalesce(exch.rate, 1) AS exchRate
+			// , coalesce(conv.rate,1) AS convRate
+		// RETURN indPrice * exchRate / convRate AS indication
+        RETURN indPrice AS indication
+	}
 RETURN *
