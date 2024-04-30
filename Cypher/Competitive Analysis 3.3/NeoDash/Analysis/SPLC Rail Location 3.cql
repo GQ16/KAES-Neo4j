@@ -17,7 +17,7 @@ PROFILE
     MATCH path = 
     (s1:SPLC)
     (
-        (ls:SPLC)<-[:IN_SPLC]-(cc)<-[:UREA_FROM]-(:RailRoute)-[:UREA_TO]->(d)-[:IN_SPLC]->(le:SPLC)
+        (ls:SPLC)<-[:IN_SPLC]-()<-[:UREA_FROM]-(:RailRoute)-[:UREA_TO]->()-[:IN_SPLC]->(le:SPLC)
         // WHERE point.distance(s2.coordinate, s1.coordinate) >= point.distance(ls.coordinate, le.coordinate)
     ){1,2}
     (s2:SPLC)
@@ -127,14 +127,14 @@ PROFILE
             }
         ] AS legs
 
-    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
+    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
     ORDER BY price
-    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, collect(price)[0] AS lowestPrice
+    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, collect(price)[0] AS lowestPrice
 	CALL{
 		WITH occ
 		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 		, (m)-[:FOR_MODE]->(:Mode{id:'RAIL'})
-		WHERE m.startDate <= $neodash_ship_date <= m.endDate
+		WHERE m.startDate <= date($neodash_ship_date) <= m.endDate
 		
 		WITH m
 		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
@@ -158,3 +158,4 @@ PROFILE
         RETURN indPrice AS indication
 	}
 RETURN *
+ORDER BY lowestPrice LIMIT 50
