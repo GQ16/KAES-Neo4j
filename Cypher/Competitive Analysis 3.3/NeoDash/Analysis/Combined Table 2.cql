@@ -177,9 +177,20 @@ ORDER BY freight LIMIT 50
 
 UNION
 
-    MATCH (selProd:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name})
-    MATCH (selDestZip:ZipCode{id:$neodash_zipcode_id_2, country:$neodash_country_id_2})
-    MATCH (selDestCity:CityState{id:$neodash_citystate_id_2, country:$neodash_country_id_2})
+    MATCH (selProd:LogisticsProductGroup)
+    MATCH (selDestZip:ZipCode)
+    MATCH (selDestCity:CityState)
+    WHERE selProd.name = $neodash_logisticsproductgroup_name
+    AND CASE 
+        WHEN isEmpty($neodash_location_id_2)
+        THEN EXISTS {
+            MATCH (selDestCity)<-[:IN_CITY]-(:Location{id:$neodash_location_id_2})-[:IN_ZIPCODE]->(selDestZip)
+        } 
+        ELSE selDestZip.id = $neodash_zipcode_id_2 
+        AND selDestZip.country = $neodash_country_id_2
+        AND selDestCity.id = $neodash_citystate_id_2
+        AND selDestCity.country = $neodash_country_id_2
+    END
 
     CALL apoc.case(
         [
