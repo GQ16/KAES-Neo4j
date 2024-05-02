@@ -127,15 +127,9 @@ PROFILE
             }
         ] AS legs
 
-    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, 
-        round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price,
-        round(reduce(miles = 0, m IN legs | miles + m.miles),0) AS totalMiles
+    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
     ORDER BY price
-
-    WITH originLocationName, occPartyName,  occ, isPrivate, minCars,
-        collect(totalMiles)[0] AS cheapestMiles,
-        collect(splcs)[0] AS cheapestRoute, 
-        collect(price)[0] AS lowestPrice
+    WITH originLocationName, occPartyName,  occ, isPrivate, minCars, collect(splcs)[0] AS cheapestRoute, collect(price)[0] AS lowestPrice
 	CALL{
 		WITH occ
 		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
@@ -143,34 +137,34 @@ PROFILE
 		WHERE m.startDate <= date($neodash_ship_date) <= m.endDate
 		
 		WITH m
-		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
-
-		// OPTIONAL MATCH (m)-[:IN_CURRENCY]->(mpiC:Currency)
-		// OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE]->(fC:Currency{id: $neodash_currency_id})
-		// OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
-		// OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
+		ORDER BY m.createdDate DESC LIMIT 1
 		
-		WITH 
+		RETURN 
 		CASE m.type
 			WHEN 'DESTINATION' 
 			THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
 			WHEN 'ORIGIN' 
 			THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
 			ELSE NULL
-		END AS indPrice
-			// , coalesce(exch.rate, 1) AS exchRate
-			// , coalesce(conv.rate,1) AS convRate
-		// RETURN indPrice * exchRate / convRate AS indication
-        RETURN indPrice AS indication
+		END AS indication
 	}
-RETURN originLocationName,
-    occPartyName,
-    [type IN labels(occ) WHERE type <> 'Occupant'] AS types,
-    isPrivate,
-    minCars,
-    cheapestMiles,
-    cheapestRoute,
-    lowestPrice,
-    indication,
-    round(lowestPrice + indication,0) AS delivered
+WITH originLocationName, occPartyName, [type IN labels(occ) WHERE type <> 'Occupant'] AS occTypes, isPrivate, minCars, cheapestRoute, lowestPrice, indication, round(lowestPrice + indication, 0) AS delivered
 ORDER BY lowestPrice LIMIT 50
+
+RETURN 
+CASE
+	WHEN "Koch" IN occTypes AND "Competitor" IN occTypes THEN "kochAndCompetitor"
+	WHEN "Koch" IN occTypes THEN "koch"
+	WHEN "Competitor" IN occTypes THEN "competitor"
+	ELSE "customer"
+END AS pinType,
+collect(DISTINCT{
+    originLocationName:originLocationName,
+    occPartyName:occPartyName,
+    isPrivate:isPrivate,
+    minCars:minCars,
+    cheapestRoute:cheapestRoute,
+    lowestPrice:lowestPrice,
+    indication:indication,
+    delivered:delivered
+}) AS competitiveAnalysisResults
