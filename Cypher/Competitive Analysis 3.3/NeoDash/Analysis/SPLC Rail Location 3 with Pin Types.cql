@@ -96,7 +96,7 @@ PROFILE
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
-    WITH originLocationName, occPartyName,  occ, fuels, miles, [s IN splcList|properties(s)] AS splcs
+    WITH originLocationName, occPartyName,  occ, fuels, miles, [s IN splcList|{lat:s.coordinate.latitude, long:s.coordinate.longitude}] AS splcs
         , CASE 
             WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) 
             THEN coalesce(rates[0].min_cars, 1) 
