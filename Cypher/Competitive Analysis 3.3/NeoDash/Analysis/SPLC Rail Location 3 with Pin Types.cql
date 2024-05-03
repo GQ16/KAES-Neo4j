@@ -22,7 +22,7 @@ PROFILE
     ){1,2}
     (s2:SPLC)
 
-    WITH ol.name AS originLocationName, party.name AS occPartyName, occ
+    WITH ol, dl, party.name AS occPartyName, occ
     , [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
     //MARK: Get Rates & Is Valid Route
@@ -52,10 +52,10 @@ PROFILE
                 )
         END AS isValid
     }
-    WITH originLocationName, occPartyName,  occ, routes, splcList, rates, isValid
+    WITH ol, dl, occPartyName,  occ, routes, splcList, rates, isValid
     WHERE isValid
 
-    WITH originLocationName, occPartyName,  occ, routes, splcList, rates
+    WITH ol, dl, occPartyName,  occ, routes, splcList, rates
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 
     //MARK: Get Fuel
@@ -74,7 +74,7 @@ PROFILE
         RETURN collect({
             baseFuel: f.rate, 
             carVol: lpg.railCarVol,
-            rate:f.rate/lpg.railCarVol, 
+            rate:f.rate/lpg.railCarVol,
             carrier:ca.id, 
             currency:fC.id
         }) AS fuels
@@ -96,7 +96,7 @@ PROFILE
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
-    WITH originLocationName, occPartyName,  occ, fuels, miles, [s IN splcList|{lat:s.coordinate.latitude, long:s.coordinate.longitude}] AS splcs
+    WITH ol, dl, occPartyName,  occ, fuels, miles
         , CASE 
             WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) 
             THEN coalesce(rates[0].min_cars, 1) 
@@ -127,9 +127,9 @@ PROFILE
             }
         ] AS legs
 
-    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
+    WITH ol, dl, occPartyName,  occ, isPublic, isPrivate, minCars, round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price
     ORDER BY price
-    WITH originLocationName, occPartyName,  occ, isPrivate, minCars, collect(splcs)[0] AS cheapestRoute, collect(price)[0] AS lowestPrice
+    WITH ol, dl, occPartyName,  occ, isPrivate, minCars, collect(price)[0] AS lowestPrice
 	CALL{
 		WITH occ
 		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
@@ -148,7 +148,7 @@ PROFILE
 			ELSE NULL
 		END AS indication
 	}
-WITH originLocationName, occPartyName, [type IN labels(occ) WHERE type <> 'Occupant'] AS occTypes, isPrivate, minCars, cheapestRoute, lowestPrice, indication, round(lowestPrice + indication, 0) AS delivered
+WITH ol, dl, occPartyName, [type IN labels(occ) WHERE type <> 'Occupant'] AS occTypes, isPrivate, minCars, lowestPrice, indication, round(lowestPrice + indication, 0) AS delivered
 ORDER BY lowestPrice LIMIT 50
 
 RETURN 
@@ -159,11 +159,17 @@ CASE
 	ELSE "customer"
 END AS pinType,
 collect(DISTINCT{
-    originLocationName:originLocationName,
+    originLocationId:ol.id,
+    originLocationName:ol.name,
+    originLat: ol.coordinate.latitude,
+    originLong: ol.coordinate.longitude,
     occPartyName:occPartyName,
+    destLocationId:dl.id,
+    destLocationName:dl.name,
+    destLat: dl.coordinate.latitude,
+    destLong: dl.coordinate.longitude,
     isPrivate:isPrivate,
     minCars:minCars,
-    cheapestRoute:cheapestRoute,
     lowestPrice:lowestPrice,
     indication:indication,
     delivered:delivered
