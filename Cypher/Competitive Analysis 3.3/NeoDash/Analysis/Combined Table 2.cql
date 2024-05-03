@@ -165,7 +165,7 @@
 RETURN originLocationName,
     occPartyName,
     [type IN labels(occ) WHERE type <> 'Occupant'] AS occupantTypes,
-    'RAIL' AS mode
+    // 'RAIL' AS mode,
     // isPrivate,
     // minCars,
     // cheapestMiles,
@@ -178,8 +178,7 @@ ORDER BY freight LIMIT 50
 UNION
     
     MATCH (selProd:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name})
-    MATCH (selDestZip:ZipCode{id:$neodash_zipcode_id_2, country:$neodash_country_id_2})
-    MATCH (selDestCity:CityState{id:$neodash_citystate_id_2, country:$neodash_country_id_2})
+    MATCH (selDestCity:CityState)<-[:IN_CITY]-(dl:Location{id:$neodash_location_id_2})-[:IN_ZIPCODE]->(selDestZip:ZipCode)
 
     CALL apoc.case(
         [
@@ -256,7 +255,7 @@ UNION
         }
     )
     YIELD value
-    WITH value.l AS l, value.o AS o, value.occupant AS occPartyName, value.occupantTypes AS occupantTypes, value.cr AS cr, value.tFSC AS tFSC, value.tmt AS tmt
+    WITH dl, value.l AS ol, value.o AS o, value.occupant AS occPartyName, value.occupantTypes AS occupantTypes, value.cr AS cr, value.tFSC AS tFSC, value.tmt AS tmt
     
     CALL{
         WITH o
@@ -267,50 +266,34 @@ UNION
         WITH m
         ORDER BY m.createdDate DESC LIMIT 1
         
-        OPTIONAL MATCH (m)-[:IN_CURRENCY]->(mpiC:Currency)
-        OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE]->(fC:Currency{id: $neodash_currency_id})
-        OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
-        OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
-        
         WITH coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) AS indPrice
-            , coalesce(exch.rate, 1) AS exchRate, coalesce(conv.rate,1) AS convRate
-        RETURN round(indPrice * exchRate / convRate, 2) AS indication
+        RETURN round(indPrice, 2) AS indication
     }
-    
-    MATCH (cr)-[:HAS_RATE_UOM]->(rUOM), 
-        (cr)-[:HAS_DISTANCE_UOM]->(dUOM), 
-        (cr)-[:IN_CURRENCY]->(cur), 
-        (cr)-[:HAS_LOAD_QTY_UOM]->(lqUOM:MassUOM)
-    MATCH (cur)-[exch:HAS_EXCHANGE_RATE]->(fC:Currency{id: $neodash_currency_id})
-    MATCH (lqUOM)-[massConv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
 
-    WITH l.name AS originLocationName, occPartyName, occupantTypes, tmt.distance AS miles, tFSC.rate AS fsc
-    , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, massConv.rate AS massConv
-    , exch.rate AS exchRate, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor
+    WITH ol, dl, occPartyName, occupantTypes, tmt.distance AS miles, tFSC.rate AS fsc
+    , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor
     , indication
-    WITH originLocationName, occPartyName, occupantTypes, fsc, miles, indication,
+    WITH ol, dl, occPartyName, occupantTypes, fsc, miles, indication,
     CASE rateFactor
-        WHEN "DISTANCE" THEN (baseRate*exchRate*miles)/(loadQty*massConv)
-        WHEN "UNIT" THEN baseRate*exchRate/massConv
-        WHEN "LOAD" THEN ratePerUom*exchRate/massConv
+        WHEN "DISTANCE" THEN (baseRate*miles)/(loadQty)
+        WHEN "UNIT" THEN baseRate
+        WHEN "LOAD" THEN ratePerUom
     END AS rate
 
-WITH originLocationName, occPartyName, occupantTypes, "TRUCK" AS mode, rate * (1+fsc) AS freight, indication
+WITH ol, dl, occPartyName, occupantTypes, "TRUCK" AS mode, rate * (1+fsc) AS freight, indication
 RETURN 
-    originLocationName, 
-    occPartyName, 
-    occupantTypes, 
+    ol.id AS originLocationId,
+    ol.name AS originLocationName,
+    ol.coordinate.latitude AS originLat,
+    ol.coordinate.longitude AS originLong,
+    occPartyName,
+    occupantTypes,
+    dl.id AS destLocationId,
+    dl.name AS destLocationName,
+    dl.coordinate.latitude AS destLat,
+    dl.coordinate.longitude AS destLong,
     mode,
-	CASE $neodash_logisticsproductgroup_name 
-        WHEN 'METHANOL' THEN round(freight,3) 
-        ELSE round(freight,2) 
-    END AS freight, 
-	CASE $neodash_logisticsproductgroup_name 
-        WHEN 'METHANOL' THEN round(indication,3) 
-        ELSE round(indication,2) 
-    END AS indication, 
-	CASE $neodash_logisticsproductgroup_name 
-        WHEN 'METHANOL' THEN round(freight + indication,3) 
-        ELSE round(freight + indication, 2) 
-    END AS delivered 
+    freight,
+    indication,
+    freight + indication AS delivered
 ORDER BY freight
