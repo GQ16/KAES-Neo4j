@@ -278,9 +278,14 @@ UNION
         WHEN "DISTANCE" THEN (baseRate*miles)/(loadQty)
         WHEN "UNIT" THEN baseRate
         WHEN "LOAD" THEN ratePerUom
-    END AS rate
+    END AS rate,
+    CASE rateFactor
+        WHEN "DISTANCE" THEN "Mile"
+        WHEN "UNIT" THEN "Unit"
+        WHEN "LOAD" THEN "Load"
+    END AS rateFactor
 
-WITH ol, dl, occPartyName, occupantTypes, "TRUCK" AS mode, rate * (1+fsc) AS freight, indication
+WITH ol, dl, occPartyName, occupantTypes, "TRUCK" AS mode, rate, rateFactor, rate * (1+fsc) AS freight, indication
 RETURN 
     ol.id AS originLocationId,
     ol.name AS originLocationName,
@@ -293,6 +298,7 @@ RETURN
     dl.coordinate.latitude AS destLat,
     dl.coordinate.longitude AS destLong,
     mode,
+    "$" + toString(round(rate,2)) + " per " + rateFactor AS rate,
     freight,
     indication,
     freight + indication AS delivered
