@@ -195,7 +195,7 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date('2024-02-29') <= tFSC.expirationDate
+                AND date('2024-04-01') <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
                 AND (
@@ -218,7 +218,7 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date('2024-02-29') <= tFSC.expirationDate
+                AND date('2024-04-01') <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
                 AND (
@@ -241,7 +241,7 @@ UNION
                 , (p:Party)-[:IS_OCCUPANT]->(o)
 
                 WHERE (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
-                AND date('2024-02-29') <= tFSC.expirationDate
+                AND date('2024-04-01') <= tFSC.expirationDate
                 and (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 
                 RETURN l, p.name AS occupant, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, null as tmt, tFSC
