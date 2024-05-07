@@ -21,7 +21,7 @@
     ){1,2}
     (s2:SPLC)
 
-    WITH ol.name AS originLocationName, party.name AS occPartyName, occ
+    WITH ol, dl,  party.name AS occPartyName, occ
     , [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
     //MARK: Get Rates & Is Valid Route
@@ -51,10 +51,10 @@
                 )
         END AS isValid
     }
-    WITH originLocationName, occPartyName,  occ, routes, splcList, rates, isValid
+    WITH ol, dl,  occPartyName,  occ, routes, splcList, rates, isValid
     WHERE isValid
 
-    WITH originLocationName, occPartyName,  occ, routes, splcList, rates
+    WITH ol, dl,  occPartyName,  occ, routes, splcList, rates
     MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 
     //MARK: Get Fuel
@@ -95,12 +95,16 @@
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
-    WITH originLocationName, occPartyName,  occ, fuels, miles, [s IN splcList|properties(s)] AS splcs
+    WITH ol, dl,  occPartyName,  occ, fuels, miles, [s IN splcList|properties(s)] AS splcs
         , CASE 
             WHEN coalesce(rates[0].min_cars, 1) >= coalesce(rates[1].min_cars, 1) 
             THEN coalesce(rates[0].min_cars, 1) 
             ELSE rates[1].min_cars 
         END AS minCars
+        , CASE 
+            WHEN size(rates) > 1 THEN "Rule 11" 
+            ELSE "$" + rates[0].rate + "/" + rates[0].uom
+        END AS rateDesc
         , [r IN rates| {
             baseRate: r.rate,
             rateType: r.uom,
@@ -114,24 +118,26 @@
             carrier: r.carrier
         }] AS rateMaps
         //since the whole path has already been checked, we can just take the value of the first
-        , rates[0].car_owner_carrier AS isPublic
+        // , rates[0].car_owner_carrier AS isPublic
         , rates[0].car_owner_shipper AS isPrivate
 
     WITH *, 
         [x IN range(0,size(rateMaps)-1)|
             {
                 rate: round(rateMaps[x].perTonRate,3),
+                rateCurr: rateMaps[x].currency,
                 fsc: round(fuels[x].rate, 6),
+                fscCurr: fuels[x].currency,
                 miles: toFloat(miles[x])
             }
         ] AS legs
 
-    WITH originLocationName, occPartyName,  occ, splcs, isPublic, isPrivate, minCars, 
+    WITH ol, dl,  occPartyName,  occ, splcs, isPrivate, minCars, rateDesc,
         round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price,
         round(reduce(miles = 0, m IN legs | miles + m.miles),0) AS totalMiles
     ORDER BY price
 
-    WITH originLocationName, occPartyName,  occ, isPrivate, minCars,
+    WITH ol, dl,  occPartyName,  occ, isPrivate, minCars, rateDesc,
         collect(totalMiles)[0] AS cheapestMiles,
         collect(splcs)[0] AS cheapestRoute, 
         collect(price)[0] AS freight
@@ -162,18 +168,27 @@
 		// RETURN indPrice * exchRate / convRate AS indication
         RETURN indPrice AS indication
 	}
-RETURN originLocationName,
+RETURN 
+    ol.id AS originLocationId,
+    ol.name AS originLocationName,
+    ol.coordinate.latitude AS originLat,
+    ol.coordinate.longitude AS originLong,
     occPartyName,
     [type IN labels(occ) WHERE type <> 'Occupant'] AS occupantTypes,
-    // 'RAIL' AS mode,
-    // isPrivate,
-    // minCars,
+    dl.id AS destLocationId,
+    dl.name AS destLocationName,
+    dl.coordinate.latitude AS destLat,
+    dl.coordinate.longitude AS destLong,
+    'RAIL' AS mode,
+    rateDesc,
+    isPrivate,
+    minCars,
     // cheapestMiles,
     // cheapestRoute,
     freight,
     indication,
     round(freight + indication,0) AS delivered
-ORDER BY freight LIMIT 50
+ORDER BY freight LIMIT 10
 
 UNION
     
@@ -195,12 +210,11 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date('2024-04-01') <= tFSC.expirationDate
+                AND date($neodash_ship_date) <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
-                AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
                 AND (
-                (prod)<-[:HAS_PRODUCTGROUP]-(o)
-                OR (lpg)<-[:HAS_PRODUCTGROUP]-(o)
+                    (prod)<-[:HAS_PRODUCTGROUP]-(o)
+                    OR (lpg)<-[:HAS_PRODUCTGROUP]-(o)
                 )
                 RETURN l, p.name AS occupant, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, tmt, tFSC
             ",
@@ -218,12 +232,11 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date('2024-04-01') <= tFSC.expirationDate
+                AND date($neodash_ship_date) <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
-                AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
                 AND (
-                (prod)<-[:HAS_PRODUCTGROUP]-(o)
-                OR (lpg)<-[:HAS_PRODUCTGROUP]-(o)
+                    (prod)<-[:HAS_PRODUCTGROUP]-(o)
+                    OR (lpg)<-[:HAS_PRODUCTGROUP]-(o)
                 )
 
                 RETURN l, p.name AS occupant, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, tmt, tFSC
@@ -240,8 +253,7 @@ UNION
                 , (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(prod)
                 , (p:Party)-[:IS_OCCUPANT]->(o)
 
-                WHERE (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
-                AND date('2024-04-01') <= tFSC.expirationDate
+                WHERE date($neodash_ship_date) <= tFSC.expirationDate
                 and (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 
                 RETURN l, p.name AS occupant, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, null as tmt, tFSC
@@ -302,4 +314,4 @@ RETURN
     freight,
     indication,
     freight + indication AS delivered
-ORDER BY freight
+ORDER BY freight LIMIT 10
