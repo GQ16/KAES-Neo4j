@@ -210,7 +210,7 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date($neodash_ship_date) <= tFSC.expirationDate
+                AND date(shipDate) <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 AND (
                     (prod)<-[:HAS_PRODUCTGROUP]-(o)
@@ -232,7 +232,7 @@ UNION
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-                AND date($neodash_ship_date) <= tFSC.expirationDate
+                AND date(shipDate) <= tFSC.expirationDate
                 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 AND (
                     (prod)<-[:HAS_PRODUCTGROUP]-(o)
@@ -253,7 +253,7 @@ UNION
                 , (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(prod)
                 , (p:Party)-[:IS_OCCUPANT]->(o)
 
-                WHERE date($neodash_ship_date) <= tFSC.expirationDate
+                WHERE date(shipDate) <= tFSC.expirationDate
                 and (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
                 
                 RETURN l, p.name AS occupant, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, null as tmt, tFSC
@@ -263,7 +263,8 @@ UNION
         {
             prod:selProd,
             dz:selDestZip,
-            dcs:selDestCity
+            dcs:selDestCity,
+            shipDate: $neodash_ship_date
         }
     )
     YIELD value
