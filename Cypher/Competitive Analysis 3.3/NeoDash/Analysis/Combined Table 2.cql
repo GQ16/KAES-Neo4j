@@ -310,7 +310,9 @@ RETURN
     dl.coordinate.latitude AS destLat,
     dl.coordinate.longitude AS destLong,
     mode,
-    "$" + toString(round(rate,2)) + " per " + rateFactor AS rate,
+    "$" + toString(round(rate,2)) + " per " + rateFactor AS rateDesc,
+    null AS isPrivate,
+    null AS minCars,
     freight,
     indication,
     freight + indication AS delivered
