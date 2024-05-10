@@ -11,7 +11,7 @@ MATCH (o:Occupant)<-[:HAS_OCCUPANT]-(l:Location)-[:IN_ZIPCODE]->(oz:ZipCode)
 
 WHERE 1=1
 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
-AND date('2024-02-29') <= tFSC.expirationDate
+AND tFSC.expirationDate IS NULL
 AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
 AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
 AND (
