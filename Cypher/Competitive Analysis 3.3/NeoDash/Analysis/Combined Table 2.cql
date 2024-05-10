@@ -3,7 +3,6 @@
     MATCH (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol:Location)
     , (ol)-[:IN_SPLC]->(s1:SPLC)
     , (occ)-[:COMPETES_IN]->(st)
-    , (occ)<-[:IS_OCCUPANT]-(party:Party)
     // , (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
     WHERE 1= 1
     AND (
@@ -11,7 +10,7 @@
         OR (occ)-[:HAS_PRODUCTGROUP]->()-[:HAS_CHILD]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
     )
     AND CASE WHEN isEmpty($neodash_location_id_1) THEN TRUE ELSE ol.id = $neodash_location_id_1 END
-
+    
 //MARK: Routes
     MATCH path = 
     (s1:SPLC)
@@ -20,8 +19,10 @@
         // WHERE point.distance(s2.coordinate, s1.coordinate) >= point.distance(ls.coordinate, le.coordinate)
     ){1,2}
     (s2:SPLC)
+    
+    OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
-    WITH ol, dl,  party.name AS occPartyName, occ
+    WITH ol, dl,  coalesce(party.name, 'Unknown') AS occPartyName, occ
     , [r IN nodes(path) WHERE r:RailRoute] AS routes, [x IN nodes(path) WHERE x:SPLC] AS splcList
     WHERE all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
     //MARK: Get Rates & Is Valid Route
