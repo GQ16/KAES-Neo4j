@@ -60,7 +60,7 @@
     CALL{
         WITH routes, lpg
         UNWIND routes AS route
-        MATCH (ca:Carrier)-[:HAS_CURRENT_FSC]->(f:RailFSC)-[:IN_CURRENCY]->(fC:Currency)<-[:IN_CURRENCY]-(route)
+        MATCH (ca:Carrier)-[:HAS_CURRENT_FSC]->(f:RailFSC)<-[:FOR_RAIL_FSC]-(fC:Currency)-[:FOR_RAIL_ROUTE]->(route)
         WHERE (
             NOT (f)-[:FOR_PRODUCTGROUP]->() 
             OR (f)-[:FOR_PRODUCTGROUP]->(lpg) 
@@ -150,8 +150,8 @@
 		WITH m
 		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
 
-		// OPTIONAL MATCH (m)-[:IN_CURRENCY]->(mpiC:Currency)
-		// OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE]->(fC:Currency{id: $neodash_currency_id})
+		// OPTIONAL MATCH (m)<-[:FOR_MPI]->(mpiC:Currency)
+		// OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE{exchangeDate:date('2023-01-10')}->(fC:Currency{id: $neodash_currency_id})
 		// OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
 		// OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
 		

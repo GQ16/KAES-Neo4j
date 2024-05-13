@@ -6,7 +6,7 @@ PROFILE
     , (ol)-[:IN_SPLC]->(s1:SPLC)
     , (occ)-[:COMPETES_IN]->(st)
     , (occ)<-[:IS_OCCUPANT]-(party:Party)
-    // , (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
+    , (l)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
     WHERE 1= 1
     AND (
         (occ)-[:HAS_PRODUCTGROUP]->(lpg) 
@@ -31,9 +31,11 @@ PROFILE
         WITH routes, lpg
         WITH routes[0] AS route1, routes[1] AS route2, lpg
         MATCH (lqUOM:MassUOM {id:'ST'})-[uomConv:HAS_CONVERSION_RATE]->(:MassUOM{id: $neodash_massuom_id})
-        MATCH (route1)-[:HAS_CURRENT_RATE]->(rate1:RailRate)-[:IN_CURRENCY]->(rate1Curr:Currency)
+        MATCH (route1)-[:HAS_CURRENT_RATE]->(rate1:RailRate)
+        MATCH (route1)<-[:FOR_RAIL_ROUTE]-(rate1Curr:Currency)
         MATCH (rate1Curr)-[exch1:HAS_EXCHANGE_RATE {exchangeDate:date('2023-01-10')}]->(finalCurr:Currency{id: $neodash_currency_id})
-        OPTIONAL MATCH (route2)-[:HAS_CURRENT_RATE]->(rate2:RailRate)-[:IN_CURRENCY]->(rate2Curr:Currency)
+        OPTIONAL MATCH (route2)-[:HAS_CURRENT_RATE]->(rate2:RailRate)
+        OPTIONAL MATCH (route2)<-[:FOR_RAIL_ROUTE]-(rate2Curr:Currency)
         OPTIONAL MATCH (rate2Curr)-[exch2:HAS_EXCHANGE_RATE {exchangeDate:date('2023-01-10')}]->(finalCurr)
 
         RETURN
@@ -113,16 +115,14 @@ PROFILE
     CALL{
         WITH routes, lpg
         UNWIND routes AS route
-        MATCH (route)<-[:HAS_ROUTE]-(ca:Carrier)-[:HAS_FSC]->(f:RailFSC)-[:IN_CURRENCY]->(fscCurr:Currency)
-        MATCH (oc:Country)<-[:IN_COUNTRY]-()<-[:FROM]-(route)-[:TO]->()-[:IN_COUNTRY]->(dc:Country)
-            , (oc)<-[:FOR_ORIGIN_COUNTRY]-(f)-[:FOR_DESTINATION_COUNTRY]->(dc)
+        MATCH (ca:Carrier)-[:HAS_CURRENT_FSC]->(f:RailFSC)<-[:FOR_RAIL_FSC]-(fscCurr:Currency)-[:FOR_RAIL_ROUTE]->(route)
         MATCH (fscCurr)-[exch:HAS_EXCHANGE_RATE {exchangeDate:date('2023-01-10')}]->(:Currency{id: $neodash_currency_id})
         WHERE (
             NOT (f)-[:FOR_PRODUCTGROUP]->() 
             OR (f)-[:FOR_PRODUCTGROUP]->(lpg) 
             OR (f)-[:FOR_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
         )
-        AND f.expirationDate IS NULL
+
         RETURN collect({
             baseFuel: f.rate, 
             carVol: lpg.railCarVol,
@@ -141,11 +141,12 @@ PROFILE
         WITH splcPairRoute[0] AS splcPair, splcPairRoute[1] AS route
         WITH route, splcPair[0] AS originSPLC, splcPair[1] AS destSPLC
 
-        MATCH (route)<-[:HAS_ROUTE]-(ca:Carrier)
-        OPTIONAL MATCH (originSPLC)-[rdt:RAIL_DISTANCE_TO{carrier:ca.id}]-(destSPLC)
-
+        CALL apoc.cypher.run(
+            "OPTIONAL MATCH (s1)-[rdt:"+ route.origin_carrier +"_DISTANCE_TO_" + route.destination_carrier + "]-(s2) RETURN coalesce(rdt.distance,10000) AS result",
+            {s1:originSPLC, s2:destSPLC}
+        ) YIELD value
         //Get one mileage per route node
-        WITH route, min(coalesce(rdt.distance,10000)) AS dist
+        WITH route, min(value.result) AS dist
         RETURN collect(dist) AS miles
     }
     //What is available at this point in the query: routes, rates, splcList, fuels, miles
@@ -181,7 +182,7 @@ PROFILE
 		WITH m
 		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
 
-		OPTIONAL MATCH (m)-[:IN_CURRENCY]->(mpiC:Currency)
+		OPTIONAL MATCH (m)<-[:FOR_MPI]-(mpiC:Currency)
 		OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE {exchangeDate:date('2023-01-10')}]->(:Currency{id: $neodash_currency_id})
 		OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
 		OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
@@ -190,7 +191,7 @@ PROFILE
         CASE m.type
 			WHEN 'DESTINATION' THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
 			WHEN 'ORIGIN' THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
-			ELSE NULL
+			ELSE 0
 		END AS indPrice
 
 		RETURN indPrice * exchRate / convRate AS indication

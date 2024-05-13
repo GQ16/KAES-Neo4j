@@ -62,15 +62,13 @@
     CALL{
         WITH routes, lpg
         UNWIND routes AS route
-        MATCH (route)<-[:HAS_ROUTE]-(ca:Carrier)-[:HAS_FSC]->(f:RailFSC)-[:IN_CURRENCY]->(fC:Currency)
-        MATCH (oc:Country)<-[:IN_COUNTRY]-()<-[:FROM]-(route)-[:TO]->()-[:IN_COUNTRY]->(dc:Country)
-            , (oc)<-[:FOR_ORIGIN_COUNTRY]-(f)-[:FOR_DESTINATION_COUNTRY]->(dc)
+        MATCH (ca:Carrier)-[:HAS_CURRENT_FSC]->(f:RailFSC)<-[:FOR_RAIL_FSC]-(fC:Currency)-[:FOR_RAIL_ROUTE]->(route)
         WHERE (
             NOT (f)-[:FOR_PRODUCTGROUP]->() 
             OR (f)-[:FOR_PRODUCTGROUP]->(lpg) 
             OR (f)-[:FOR_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
         )
-        AND f.expirationDate IS NULL
+
         RETURN collect({
             baseFuel: f.rate, 
             carVol: lpg.railCarVol,
