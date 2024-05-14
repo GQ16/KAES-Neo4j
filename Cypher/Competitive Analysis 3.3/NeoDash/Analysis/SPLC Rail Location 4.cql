@@ -123,15 +123,19 @@
         [x IN range(0,size(rateMaps)-1)|
             {
                 rate: round(rateMaps[x].perTonRate,3),
-                rateCurr: rateMaps[x].currency,
                 fsc: round(fuels[x].rate, 6),
-                fscCurr: fuels[x].currency,
-                miles: toFloat(miles[x])
+                curr: rateMaps[x].currency,
+                miles: toFloat(miles[x]),
+                exchRate: CASE 
+                    WHEN rateMaps[x].currency = $neodash_currency_id THEN 1 
+                    WHEN rateMaps[x].currency = 'USD' AND $neodash_currency_id = 'CAD' THEN 1.36
+                    WHEN rateMaps[x].currency = 'CAD' AND $neodash_currency_id = 'USD' THEN 0.73
+                END
             }
         ] AS legs
 
     WITH ol, dl,  occPartyName,  occ, splcs, isPrivate, minCars, rateDesc,
-        round(reduce(price = 0, x IN legs | price + x.rate + (x.fsc * x.miles) ),2) AS price,
+        round(reduce(price = 0, x IN legs | price + (x.rate + (x.fsc * x.miles)) * x.exchRate ),2) AS price,
         round(reduce(miles = 0, m IN legs | miles + m.miles),0) AS totalMiles
     ORDER BY price
 
@@ -145,45 +149,48 @@
 		WITH occ
 		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
 		, (m)-[:FOR_MODE]->(:Mode{id:'RAIL'})
+        , (c:Currency)-[:FOR_MPI]->(m)
 		WHERE m.startDate <= date($neodash_ship_date) <= m.endDate
 		
-		WITH m
+		WITH m, c.id AS curr
 		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
-
-		// OPTIONAL MATCH (m)<-[:FOR_MPI]->(mpiC:Currency)
-		// OPTIONAL MATCH (mpiC)-[exch:HAS_EXCHANGE_RATE{exchangeDate:date('2023-01-10')}->(fC:Currency{id: $neodash_currency_id})
-		// OPTIONAL MATCH (m)-[:HAS_QTY_UOM]->(mpiU:MassUOM)
-		// OPTIONAL MATCH (mpiU)-[conv:HAS_CONVERSION_RATE]->(fM:MassUOM{id: $neodash_massuom_id})
 		
-		WITH 
-		CASE m.type
-			WHEN 'DESTINATION' 
-			THEN coalesce(m.singularPrice-m.freight,((m.minPrice+m.maxPrice)/2) -m.freight) 
-			WHEN 'ORIGIN' 
-			THEN coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) 
-			ELSE NULL
-		END AS indPrice
-			// , coalesce(exch.rate, 1) AS exchRate
-			// , coalesce(conv.rate,1) AS convRate
-		// RETURN indPrice * exchRate / convRate AS indication
-        RETURN indPrice AS indication
+		WITH m.createdDate AS dateLogged,
+		CASE 
+			WHEN m.type = 'DESTINATION' AND m.singularPrice IS NOT NULL
+			THEN m.singularPrice-m.freight 
+			WHEN m.type = 'DESTINATION' AND m.singularPrice IS NULL
+			THEN ((m.minPrice+m.maxPrice)/2) - m.freight
+            WHEN m.type = 'ORIGIN' AND m.singularPrice IS NOT NULL
+			THEN m.singularPrice
+            WHEN m.type = 'ORIGIN' AND m.singularPrice IS NULL
+			THEN (m.minPrice+m.maxPrice)/2
+            ELSE NULL
+		END AS indPrice,
+        CASE 
+            WHEN curr = $neodash_currency_id THEN 1 
+            WHEN curr = 'USD' AND $neodash_currency_id = 'CAD' THEN 1.36
+            WHEN curr = 'CAD' AND $neodash_currency_id = 'USD' THEN 0.73
+        END AS exchRate
+
+        RETURN indPrice * exchRate AS indication, dateLogged
 	}
 RETURN 
     ol.id AS originLocationId,
     ol.name AS originLocationName,
-    ol.coordinate.latitude AS originLat,
-    ol.coordinate.longitude AS originLong,
+    round(ol.coordinate.latitude,5) AS originLat,
+    round(ol.coordinate.longitude,5) AS originLong,
     occPartyName,
     [type IN labels(occ) WHERE type <> 'Occupant'] AS occupantTypes,
     dl.id AS destLocationId,
     dl.name AS destLocationName,
-    dl.coordinate.latitude AS destLat,
-    dl.coordinate.longitude AS destLong,
+    round(dl.coordinate.latitude,5) AS destLat,
+    round(dl.coordinate.longitude,5) AS destLong,
     'RAIL' AS mode,
     rateDesc,
     isPrivate,
     minCars,
-    // cheapestMiles,
+    cheapestMiles AS miles,
     // cheapestRoute,
     freight,
     indication,
