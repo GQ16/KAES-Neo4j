@@ -194,5 +194,5 @@ RETURN
     // cheapestRoute,
     freight,
     indication,
-    round(freight + indication,0) AS delivered
+    ceil(freight + indication) AS delivered
 ORDER BY freight LIMIT 10

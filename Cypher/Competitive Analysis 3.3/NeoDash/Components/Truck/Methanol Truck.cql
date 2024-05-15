@@ -1,15 +1,23 @@
 //Methanol Truck
-MATCH (prod:LogisticsProductGroup{name:$neodash_logisticsproductgroup_name})
-MATCH (prod)<-[:HAS_PRODUCTGROUP]-(o:Occupant)<-[:HAS_OCCUPANT]-(l:Location)
+MATCH (st:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
+MATCH (dl)-[:IN_CITY]->(dcs:CityState)
+, (prod:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-(occ:Occupant)<-[:HAS_OCCUPANT]-(l:Location)
 , (l)-[:IN_CITY]->(ocs:CityState)
-, (ocs)<-[:FROM]-(tr:TruckRoute)-[:TO]->(dcs:CityState{id:$neodash_citystate_id_2})
-, (dcs)<-[:IN_CITY]-(dz:ZipCode{id:$neodash_zipcode_id_2, country:$neodash_country_id_2})
+, (ocs)<-[:FROM]-(tr:TruckRoute)-[:TO]->(dcs)
+, (dcs)<-[:IN_CITY]-(dz)
 , (tr)-[:FOR_PRODUCTGROUP]->(prod)
 , (tr)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
 , (l)-[:IN_COUNTRY]->(c:Country)<-[:FOR_ORIGIN_COUNTRY]-(tFSC:TruckFSC)
 , (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(prod)
 
-WHERE (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
-AND date('2024-02-29') <= tFSC.expirationDate
+WHERE 1=1
+AND dl.id = $neodash_location_id_2
+AND prod.name = 'METHANOL'
+AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
+AND tFSC.expirationDate IS NULL
+AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
 
-RETURN l,cr,null AS tmt,tFSC,dz
+OPTIONAL MATCH (oz)-[tmt:TRUCK_DISTANCE_TO]->(dz)
+OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
+
+RETURN l, p.name AS occupantPartyName, [x IN labels(o) WHERE x <> 'Occupant'] AS occupantTypes, cr, tmt, tFSC

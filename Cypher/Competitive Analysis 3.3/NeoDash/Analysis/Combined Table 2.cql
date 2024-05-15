@@ -214,6 +214,7 @@ UNION
                 , (oz)-[:IN_COUNTRY]->(c:Country)
                 , (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(lpg)
                 , (p:Party)-[:IS_OCCUPANT]->(o)
+                , (curr:Currency)-[:FOR_TRUCK_ROUTE]->(tr)
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
@@ -236,6 +237,7 @@ UNION
                 , (oz)-[:IN_COUNTRY]->(c:Country)
                 , (tFSC)-[:FOR_PRODUCTGROUP]->(lpg)
                 , (p:Party)-[:IS_OCCUPANT]->(o)
+                , (curr:Currency)-[:FOR_TRUCK_ROUTE]->(tr)
 
                 WHERE 1=1
                 AND cr.distanceLower < tmt.distance <= cr.distanceUpper
@@ -259,6 +261,7 @@ UNION
                 , (l)-[:IN_COUNTRY]->(c:Country)
                 , (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(prod)
                 , (p:Party)-[:IS_OCCUPANT]->(o)
+                , (curr:Currency)-[:FOR_TRUCK_ROUTE]->(tr)
 
                 WHERE 1=1
                 AND tFSC.expirationDate IS NULL
@@ -275,25 +278,12 @@ UNION
         }
     )
     YIELD value
-    WITH dl, value.l AS ol, value.o AS o, value.occupant AS occPartyName, value.occupantTypes AS occupantTypes, value.cr AS cr, value.tFSC AS tFSC, value.tmt AS tmt
-    
-    CALL{
-        WITH o
-        OPTIONAL MATCH (o)<-[fo:FOR_OCCUPANT]-(m:MPI)-[fp:FOR_PRODUCTGROUP]->(lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
-        , (m)-[:FOR_MODE]->(:Mode{id:'TRUCK'})
-        WHERE m.startDate <= date($neodash_ship_date) <= m.endDate
-        
-        WITH m
-        ORDER BY m.createdDate DESC LIMIT 1
-        
-        WITH coalesce(m.singularPrice,(m.minPrice+m.maxPrice)/2) AS indPrice
-        RETURN round(indPrice, 2) AS indication
-    }
+    WITH dl, value.l AS ol, value.o AS occ, value.occupant AS occPartyName, value.occupantTypes AS occupantTypes, value.cr AS cr, value.tFSC AS tFSC, value.tmt AS tmt
 
-    WITH ol, dl, occPartyName, occupantTypes, tmt.distance AS miles, tFSC.rate AS fsc
+    WITH ol, dl, occ, occPartyName, occupantTypes, tmt.distance AS miles, tFSC.rate AS fsc
     , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor
-    , indication
-    WITH ol, dl, occPartyName, occupantTypes, fsc, miles, indication,
+    
+    WITH ol, dl, occ, occPartyName, occupantTypes, fsc, miles, indication, dateLogged,
     CASE rateFactor
         WHEN "DISTANCE" THEN (baseRate*miles)/(loadQty)
         WHEN "UNIT" THEN baseRate
@@ -305,18 +295,50 @@ UNION
         WHEN "LOAD" THEN "Load"
     END AS rateFactor
 
-WITH ol, dl, occPartyName, occupantTypes, "TRUCK" AS mode, rate, rateFactor, rate * (1+fsc) AS freight, indication, miles
+    WITH ol, dl, occ, occPartyName, occupantTypes, "TRUCK" AS mode, rate, rateFactor, rate * (1+fsc) AS freight, occ, miles
+    
+    //MARK: Get Indication
+    CALL{
+        WITH occ
+		OPTIONAL MATCH (occ)<-[:FOR_OCCUPANT]-(m:MPI)-[:FOR_PRODUCTGROUP]->(:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
+		, (m)-[:FOR_MODE]->(:Mode{id:'TRUCK'})
+        , (c:Currency)-[:FOR_MPI]->(m)
+		WHERE m.startDate <= date($neodash_ship_date) <= m.endDate
+		
+		WITH m, c.id AS curr
+		ORDER BY m.createdDate DESC LIMIT 1	//Get latest MPI
+		
+		WITH m.createdDate AS dateLogged,
+		CASE 
+			WHEN m.type = 'DESTINATION' AND m.singularPrice IS NOT NULL
+			THEN m.singularPrice-m.freight 
+			WHEN m.type = 'DESTINATION' AND m.singularPrice IS NULL
+			THEN ((m.minPrice+m.maxPrice)/2) - m.freight
+            WHEN m.type = 'ORIGIN' AND m.singularPrice IS NOT NULL
+			THEN m.singularPrice
+            WHEN m.type = 'ORIGIN' AND m.singularPrice IS NULL
+			THEN (m.minPrice+m.maxPrice)/2
+            ELSE NULL
+		END AS indPrice,
+        CASE 
+            WHEN curr = $neodash_currency_id THEN 1 
+            WHEN curr = 'USD' AND $neodash_currency_id = 'CAD' THEN 1.36
+            WHEN curr = 'CAD' AND $neodash_currency_id = 'USD' THEN 0.73
+        END AS exchRate
+
+        RETURN indPrice * exchRate AS indication, dateLogged
+    }
+
 RETURN 
     ol.id AS originLocationId,
     ol.name AS originLocationName,
-    ol.coordinate.latitude AS originLat,
-    ol.coordinate.longitude AS originLong,
-    occPartyName,
+    round(ol.coordinate.latitude,5) AS originLat,
+    round(ol.coordinate.longitude,5) AS originLong,    occPartyName,
     occupantTypes,
     dl.id AS destLocationId,
     dl.name AS destLocationName,
-    dl.coordinate.latitude AS destLat,
-    dl.coordinate.longitude AS destLong,
+    round(dl.coordinate.latitude,5) AS destLat,
+    round(dl.coordinate.longitude,5) AS destLong,
     mode,
     "$" + toString(round(rate,2)) + "/" + rateFactor AS rateDesc,
     null AS isPrivate,
@@ -324,5 +346,6 @@ RETURN
     miles,
     freight,
     indication,
+    dateLogged,
     freight + indication AS delivered
 ORDER BY freight LIMIT 10
