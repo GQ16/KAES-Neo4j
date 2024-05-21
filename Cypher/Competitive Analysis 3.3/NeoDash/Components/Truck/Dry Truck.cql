@@ -1,30 +1,37 @@
-//Dry Truck Query
-MATCH (st:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
-MATCH (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol:Location)-[:IN_ZIPCODE]->(oz:ZipCode)
-, (dlg:LocationGroup)<-[:IN_LOCATION_GROUP]-(dz)
-, (ol)-[:IN_CITY]->(ocs:CityState)<-[:FROM]-(tr:TruckRoute)-[:TO]->(dlg)
-, (tr)-[:FOR_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
-, (tr)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
-, (oz)-[:IN_COUNTRY]->(c:Country)
-, (tFSC:TruckFSC)-[:FOR_PRODUCTGROUP]->(lpg)
-, (occ)-[:COMPETES_IN]->(st)
-, (oz)-[tdt:TRUCK_DISTANCE_TO]->(dz)
+MATCH (lpg:LogisticsProductGroup)
+WHERE lpg.name = $neodash_logisticsproductgroup_name
+OPTIONAL MATCH prodPath=(:LogisticsProductGroup)-[:HAS_CHILD*]->(lpg)
+WITH coalesce(nodes(prodPath),[lpg]) AS lpgHier
+
+MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
+, (co:Country)<-[:IN_COUNTRY]-(dz)-[:IN_LOCATION_GROUP]->(dlg)
+, (co)<-[:IN_COUNTRY]-(oc:CityState)-[:FROM]-(route:TruckRoute)-[:TO]-(dlg)
+, (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
+, (ol:Location)-[:IN_CITY]->(oc)
+, (ol)-[:IN_ZIPCODE]->(oz)
+, (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
+, (occ)-[:HAS_PRODUCTGROUP]->(occProd:LogisticsProductGroup)
+, (occ)-[:COMPETES_IN]->(ds)
+, (route)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
+, (oz)-[tdt:TRUCK_DISTANCE_TO]-(dz)
+, (tFSC:TruckFSC)-[:FOR_ORIGIN_COUNTRY]->(co)
+, (tFSC)-[:FOR_PRODUCTGROUP]->(fscProd:LogisticsProductGroup)
 
 WHERE 1=1
-AND dl.id = $neodash_location_id_2
-AND lpg.name = 'DRY'
+AND dl.name = $neodash_location_name_2
+AND routeProd IN lpgHier
+AND occProd IN lpgHier
+AND fscProd IN lpgHier
 AND cr.distanceLower < tdt.distance <= cr.distanceUpper
+AND co.id = 'US'
 AND tFSC.expirationDate IS NULL
-AND (c)<-[:FOR_ORIGIN_COUNTRY]-(tFSC)
-AND (ol)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
-AND (
-  (lpg)<-[:HAS_PRODUCTGROUP]-(occ)
-  OR (lpg)-[:HAS_CHILD]->()<-[:HAS_PRODUCTGROUP]-(occ)
-)
+    
+OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
-OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(p:Party)
+WITH *
 
-  WITH ol, dl, occ, p.name AS occPartyName, [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
+WITH ol, dl, occ, party.name AS occPartyName, 
+  [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc
   , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor

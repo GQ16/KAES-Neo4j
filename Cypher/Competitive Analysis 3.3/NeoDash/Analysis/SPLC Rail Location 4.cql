@@ -8,7 +8,7 @@
     WHERE 1= 1
     AND (
         (occ)-[:HAS_PRODUCTGROUP]->(lpg) 
-        OR (occ)-[:HAS_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
+        OR (occ)-[:HAS_PRODUCTGROUP]->()-[:HAS_CHILD*]->(lpg)
     )
     AND CASE WHEN isEmpty($neodash_location_id_1) THEN TRUE ELSE ol.id = $neodash_location_id_1 END
 
@@ -64,7 +64,7 @@
         WHERE (
             NOT (f)-[:FOR_PRODUCTGROUP]->() 
             OR (f)-[:FOR_PRODUCTGROUP]->(lpg) 
-            OR (f)-[:FOR_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
+            OR (f)-[:FOR_PRODUCTGROUP]->()-[:HAS_CHILD*]->(lpg)
         )
 
         RETURN collect({
