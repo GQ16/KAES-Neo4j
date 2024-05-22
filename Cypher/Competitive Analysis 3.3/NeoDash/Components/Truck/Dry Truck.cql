@@ -8,7 +8,7 @@ MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode
 , (co)<-[:IN_COUNTRY]-(oc:CityState)-[:FROM]-(route:TruckRoute)-[:TO]-(dlg)
 , (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
 , (ol:Location)-[:IN_CITY]->(oc)
-, (ol)-[:IN_ZIPCODE]->(oz)
+, (ol)-[:IN_ZIPCODE]->(oz:ZipCode)
 , (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
 , (occ)-[:HAS_PRODUCTGROUP]->(occProd:LogisticsProductGroup)
 , (occ)-[:COMPETES_IN]->(ds)

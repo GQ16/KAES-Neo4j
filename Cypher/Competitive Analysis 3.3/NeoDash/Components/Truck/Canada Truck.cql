@@ -3,17 +3,17 @@ WHERE lpg.name = $neodash_logisticsproductgroup_name
 OPTIONAL MATCH prodPath=(:LogisticsProductGroup)-[:HAS_CHILD*]->(lpg)
 WITH lpg, coalesce(nodes(prodPath),[lpg]) AS lpgHier
 
-MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
+MATCH (dc:Country)<-[:IN_COUNTRY]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
 , (oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]-(dz)
-, (co:Country)<-[:IN_COUNTRY]-(os:StateOrProvince)-[:FROM]-(route:TruckRoute)
+, (oc:Country)-[:FROM]-(route:TruckRoute)-[:TO]->(dc)
 , (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
-, (ol:Location)-[:IN_STATE]->(os)
+, (ol:Location)-[:IN_COUNTRY]->(oc)
 , (ol)-[:IN_ZIPCODE]->(oz)
 , (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
 , (occ)-[:HAS_PRODUCTGROUP]->(occProd:LogisticsProductGroup)
 , (occ)-[:COMPETES_IN]->(ds)
 , (route)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
-, (tFSC:TruckFSC)-[:FOR_ORIGIN_COUNTRY]->(co)
+, (tFSC:TruckFSC)-[:FOR_ORIGIN_COUNTRY]->(oc)
 , (tFSC)-[:FOR_PRODUCTGROUP]->(fscProd:LogisticsProductGroup)
 , (ol)-[:HAS_OUTBOUND]->(mo:Mode)<-[:HAS_INBOUND]-(dl)
 
@@ -22,8 +22,9 @@ AND dl.name = $neodash_location_name_2
 AND routeProd IN lpgHier
 AND occProd IN lpgHier
 AND fscProd IN lpgHier
-AND cr.distanceLower < tdt.distance <= cr.distanceUpper
-AND co.id = 'US'
+//the Rate Distance Bands for Candian truck are in KM while the distances are in Miles:
+AND cr.distanceLower < (tdt.distance * 1.60934) <= cr.distanceUpper
+AND co.id = 'CA'
 AND tFSC.expirationDate IS NULL
 AND mo.id = 'TRUCK'
 
