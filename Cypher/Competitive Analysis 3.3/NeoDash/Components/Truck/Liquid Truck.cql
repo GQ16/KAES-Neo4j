@@ -16,6 +16,7 @@ MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode
 , (oz)-[tdt:TRUCK_DISTANCE_TO]-(dz)
 , (tFSC:TruckFSC)-[:FOR_ORIGIN_COUNTRY]->(co)
 , (tFSC)-[:FOR_PRODUCTGROUP]->(fscProd:LogisticsProductGroup)
+, (ol)-[:HAS_OUTBOUND]->(mo:Mode)<-[:HAS_INBOUND]-(dl)
 
 WHERE 1=1
 AND dl.name = $neodash_location_name_2
@@ -25,10 +26,9 @@ AND fscProd IN lpgHier
 AND cr.distanceLower < tdt.distance <= cr.distanceUpper
 AND co.id = 'US'
 AND tFSC.expirationDate IS NULL
-    
-OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
+AND mo.id = 'TRUCK'
 
-WITH *
+OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
 WITH ol, dl, occ, party.name AS occPartyName, 
   [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC

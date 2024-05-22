@@ -1,26 +1,28 @@
 //Methanol Truck
-MATCH (st:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
-MATCH (dl)-[:IN_CITY]->(dcs:CityState)
-, (lpg:LogisticsProductGroup)<-[:HAS_PRODUCTGROUP]-(occ:Occupant)<-[:HAS_OCCUPANT]-(l:Location)
-, (l)-[:IN_CITY]->(ocs:CityState)
+MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
+, (dl)-[:IN_CITY]->(dcs:CityState)
 , (ocs)<-[:FROM]-(tr:TruckRoute)-[:TO]->(dcs)
-, (dcs)<-[:IN_CITY]-(dz)
-, (tr)-[:FOR_PRODUCTGROUP]->(lpg)
+, (tr)-[:FOR_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
+, (lpg)<-[:HAS_PRODUCTGROUP]-(occ:Occupant)
+, (occ)<-[:HAS_OCCUPANT]-(ol:Location)
+, (ol)-[:IN_CITY]->(ocs:CityState)
 , (tr)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
-, (l)-[:IN_COUNTRY]->(c:Country)<-[:FOR_ORIGIN_COUNTRY]-(tFSC:TruckFSC)
+, (ol)-[:IN_COUNTRY]->(c:Country)<-[:FOR_ORIGIN_COUNTRY]-(tFSC:TruckFSC)
 , (tFSC)-[:FOR_PRODUCTGROUP]->(lpg)
+, (occ)-[:COMPETES_IN]->(ds)
+, (ol)-[:HAS_OUTBOUND]->(mo:Mode)<-[:HAS_INBOUND]-(dl)
 
 WHERE 1=1
-AND dl.id = $neodash_location_id_2
-AND lpg.name = 'METHANOL'
-AND (l)-[:HAS_OUTBOUND]->(:Mode{id:'TRUCK'})
+AND dl.name = $neodash_location_name_2
+AND lpg.name = $neodash_logisticsproductgroup_name
 AND tFSC.expirationDate IS NULL
+AND mo.id = 'TRUCK'
 
 OPTIONAL MATCH (oz)-[tdt:TRUCK_DISTANCE_TO]->(dz)
 OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
 
-  WITH ol, dl, occ, p.name AS occPartyName, [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
+  WITH ol, dl, occ, party.name AS occPartyName, [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc
   , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor

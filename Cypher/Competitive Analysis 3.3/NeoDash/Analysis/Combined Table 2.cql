@@ -4,8 +4,10 @@
     MATCH (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol:Location)
     , (ol)-[:IN_SPLC]->(s1:SPLC)
     , (occ)-[:COMPETES_IN]->(st)
-    // , (ol)-[:HAS_OUTBOUND]->(m:Mode{id:'RAIL'})
+    , (ol)-[:HAS_OUTBOUND]->(mo:Mode)<-[:HAS_INBOUND]-(dl)
+
     WHERE 1= 1
+    AND mo.id = 'RAIL'
     AND (
         (occ)-[:HAS_PRODUCTGROUP]->(lpg) 
         OR (occ)-[:HAS_PRODUCTGROUP]->()-[:HAS_CHILD]->(lpg)
