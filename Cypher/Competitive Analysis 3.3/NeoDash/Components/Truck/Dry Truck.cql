@@ -7,6 +7,7 @@ MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode
 , (co:Country)<-[:IN_COUNTRY]-(dz)-[:IN_LOCATION_GROUP]->(dlg)
 , (co)<-[:IN_COUNTRY]-(oc:CityState)-[:FROM]-(route:TruckRoute)-[:TO]-(dlg)
 , (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
+, (route)<-[:FOR_TRUCK_ROUTE]-(curr:Currency)
 , (ol:Location)-[:IN_CITY]->(oc)
 , (ol)-[:IN_ZIPCODE]->(oz:ZipCode)
 , (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
@@ -30,17 +31,22 @@ AND mo.id = 'TRUCK'
     
 OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
-WITH ol, dl, occ, party.name AS occPartyName, 
+WITH DISTINCT ol, dl, occ, party.name AS occPartyName, curr.id AS curr
   [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc
   , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor
-  
+  , CASE 
+      WHEN curr = $neodash_currency_id THEN 1 
+      WHEN curr = 'USD' AND $neodash_currency_id = 'CAD' THEN 1.36
+      WHEN curr = 'CAD' AND $neodash_currency_id = 'USD' THEN 0.73
+    END AS exchRate
+
   WITH ol, dl, occ, occPartyName, occupantTypes, fsc, miles,
   CASE rateFactor
-      WHEN "DISTANCE" THEN (baseRate*miles)/(loadQty)
-      WHEN "UNIT" THEN baseRate
-      WHEN "LOAD" THEN ratePerUom
+      WHEN "DISTANCE" THEN (baseRate* exchRate * miles)/(loadQty)
+      WHEN "UNIT" THEN baseRate * exchRate
+      WHEN "LOAD" THEN ratePerUom * exchRate
   END AS rate,
   CASE rateFactor
       WHEN "DISTANCE" THEN "Mile"

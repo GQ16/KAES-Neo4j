@@ -7,6 +7,7 @@ MATCH (dc:Country)<-[:IN_COUNTRY]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
 , (oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]-(dz)
 , (oc:Country)-[:FROM]-(route:TruckRoute)-[:TO]->(dc)
 , (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
+, (route)<-[:FOR_TRUCK_ROUTE]-(curr:Currency)
 , (ol:Location)-[:IN_COUNTRY]->(oc)
 , (ol)-[:IN_ZIPCODE]->(oz)
 , (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
@@ -24,13 +25,13 @@ AND occProd IN lpgHier
 AND fscProd IN lpgHier
 //the Rate Distance Bands for Candian truck are in KM while the distances are in Miles:
 AND cr.distanceLower < (tdt.distance * 1.60934) <= cr.distanceUpper
-AND co.id = 'CA'
+AND oc.id = 'CA'
 AND tFSC.expirationDate IS NULL
 AND mo.id = 'TRUCK'
 
 OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
-WITH ol, dl, occ, party.name AS occPartyName, 
+WITH DISTINCT ol, dl, occ, party.name AS occPartyName, curr.id AS curr
   [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc

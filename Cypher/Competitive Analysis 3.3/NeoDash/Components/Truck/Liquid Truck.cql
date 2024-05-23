@@ -5,8 +5,15 @@ WITH lpg, coalesce(nodes(prodPath),[lpg]) AS lpgHier
 
 MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
 , (oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]-(dz)
+//Note that there is not traversal to the destination of these routes
+//this is due to liquid truck being completely based on the origin state
+//and mileage from the origin state. The destination is irrelevant to the
+//rate at this moment in time. What this means, is that this liquid truck 
+//query applies to any liquid truck from any valid origin state, to ANY 
+//US or Canada destination location.
 , (co:Country)<-[:IN_COUNTRY]-(os:StateOrProvince)-[:FROM]-(route:TruckRoute)
 , (route)-[:FOR_PRODUCTGROUP]->(routeProd:LogisticsProductGroup)
+, (route)<-[:FOR_TRUCK_ROUTE]-(curr:Currency)
 , (ol:Location)-[:IN_STATE]->(os)
 , (ol)-[:IN_ZIPCODE]->(oz)
 , (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol)
@@ -29,7 +36,7 @@ AND mo.id = 'TRUCK'
 
 OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
-WITH ol, dl, occ, party.name AS occPartyName, 
+WITH DISTINCT ol, dl, occ, party.name AS occPartyName, curr.id AS curr
   [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc
@@ -47,6 +54,7 @@ WITH ol, dl, occ, party.name AS occPartyName,
       WHEN "LOAD" THEN "Load"
   END AS rateFactor
 
+  //Note: Truck FSC is a multiplier, therefore, Truck FSC is not affiliated with currency
   WITH ol, dl, occ, occPartyName, occupantTypes, "TRUCK" AS mode, rate, rateFactor, rate * (1+fsc) AS freight, miles
   
   //MARK: Get Indication

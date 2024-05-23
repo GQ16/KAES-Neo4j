@@ -1,12 +1,13 @@
 //Methanol Truck
 MATCH (ds:StateOrProvince)<-[:IN_STATE]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
 , (dl)-[:IN_CITY]->(dcs:CityState)
-, (ocs)<-[:FROM]-(tr:TruckRoute)-[:TO]->(dcs)
-, (tr)-[:FOR_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
+, (ocs)<-[:FROM]-(route:TruckRoute)-[:TO]->(dcs)
+, (route)<-[:FOR_TRUCK_ROUTE]-(curr:Currency)
+, (route)-[:FOR_PRODUCTGROUP]->(lpg:LogisticsProductGroup)
 , (lpg)<-[:HAS_PRODUCTGROUP]-(occ:Occupant)
 , (occ)<-[:HAS_OCCUPANT]-(ol:Location)
 , (ol)-[:IN_CITY]->(ocs:CityState)
-, (tr)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
+, (route)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
 , (ol)-[:IN_COUNTRY]->(c:Country)<-[:FOR_ORIGIN_COUNTRY]-(tFSC:TruckFSC)
 , (tFSC)-[:FOR_PRODUCTGROUP]->(lpg)
 , (occ)-[:COMPETES_IN]->(ds)
@@ -22,7 +23,8 @@ OPTIONAL MATCH (oz)-[tdt:TRUCK_DISTANCE_TO]->(dz)
 OPTIONAL MATCH (occ)<-[:IS_OCCUPANT]-(party:Party)
 
 
-  WITH ol, dl, occ, party.name AS occPartyName, [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
+  WITH DISTINCT ol, dl, occ, party.name AS occPartyName, curr.id AS curr,
+    [x IN labels(occ) WHERE x <> 'Occupant'] AS occupantTypes, cr, tdt, tFSC
 
   WITH ol, dl, occ, occPartyName, occupantTypes, tdt.distance AS miles, tFSC.rate AS fsc
   , cr.rate AS baseRate, cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor
