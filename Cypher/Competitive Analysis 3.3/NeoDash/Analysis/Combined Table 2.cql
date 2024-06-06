@@ -1,9 +1,9 @@
 //MARK: Rail Finding Locations
-    MATCH (lpg:LogisticsProductGroup{name: $neodash_logisticsproductgroup_name})
-    MATCH (st:StateOrProvince)<-[IN_STATE]-(dl:Location{id:$neodash_location_id_2})-[:IN_SPLC]->(s2:SPLC)
+    MATCH (lpg:LogisticsProductGroup{name: $product})
+    MATCH (ds:StateOrProvince)<-[IN_STATE]-(dl:Location)-[:IN_SPLC]->(s2:SPLC)
     MATCH (occ:Koch|Competitor)<-[:HAS_OCCUPANT]-(ol:Location)
     , (ol)-[:IN_SPLC]->(s1:SPLC)
-    , (occ)-[:COMPETES_IN]->(st)
+    , (occ)-[:COMPETES_IN]->(ds)
     , (ol)-[:HAS_OUTBOUND]->(mo:Mode)<-[:HAS_INBOUND]-(dl)
 
     WHERE 1= 1
@@ -141,7 +141,8 @@
         round(reduce(miles = 0, m IN legs | miles + m.miles),0) AS totalMiles
     ORDER BY price
 
-    WITH ol, dl,  occPartyName,  occ, isPrivate, minCars, rateDesc,
+    WITH ol, dl,  occPartyName,  occ, isPrivate, minCars, 
+        collect(rateDesc)[0] AS rateDesc,
         collect(totalMiles)[0] AS cheapestMiles,
         collect(splcs)[0] AS cheapestRoute, 
         collect(price)[0] AS freight

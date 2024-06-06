@@ -1,7 +1,7 @@
 MATCH (lpg:LogisticsProductGroup)
 WHERE lpg.name = $neodash_logisticsproductgroup_name
 OPTIONAL MATCH prodPath=(:LogisticsProductGroup)-[:HAS_CHILD*]->(lpg)
-WITH lpg, coalesce(nodes(prodPath),[lpg]) AS lpgHier
+WITH coalesce(nodes(prodPath),[lpg]) AS lpgHier
 
 MATCH (dc:Country)<-[:IN_COUNTRY]-(dl:Location)-[:IN_ZIPCODE]->(dz:ZipCode)
 , (oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]-(dz)
