@@ -1,14 +1,14 @@
 Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End Date,Rate Category,Season,Rec Loc Type,Rec Loc ID,Del Loc Type,Del Loc ID,Rate Type,Rate Unit,Charge Indicator,Rate,Rate Override,Custody Contract,Shipper,Custody Deal,Buy/Sell Deal,Comments,Product Category,Products
-177093,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER,Fixed,,Delivery,1.71,,,,,,,All,None
-177194,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER,Fixed,,Delivery,1.71,,,,,,,All,None
-177115,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER,Fixed,,Delivery,2.10039,,,,,,,All,None
-177216,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER,Fixed,,Delivery,2.10039,,,,,,,All,None
-177133,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER,Fixed,,Delivery,0.77209,,,,,,,All,None
-177234,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER,Fixed,,Delivery,0.77209,,,,,,,All,None
-177150,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER,Fixed,,Delivery,1.31,,,,,,,All,None
-177251,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER,Fixed,,Delivery,1.31,,,,,,,All,None
-177174,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER,Fixed,,Delivery,0,,,,,,,All,None
-177275,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177093,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER MILLS,Fixed,,Delivery,1.71,,,,,,,All,None
+177194,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER MILLS,Fixed,,Delivery,1.71,,,,,,,All,None
+177115,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER MILLS,Fixed,,Delivery,2.10039,,,,,,,All,None
+177216,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER MILLS,Fixed,,Delivery,2.10039,,,,,,,All,None
+177133,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER MILLS,Fixed,,Delivery,0.77209,,,,,,,All,None
+177234,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER MILLS,Fixed,,Delivery,0.77209,,,,,,,All,None
+177150,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER MILLS,Fixed,,Delivery,1.31,,,,,,,All,None
+177251,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER MILLS,Fixed,,Delivery,1.31,,,,,,,All,None
+177174,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER MILLS,Fixed,,Delivery,0,,,,,,,All,None
+177275,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER MILLS,Fixed,,Delivery,0,,,,,,,All,None
 177106,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,CARLTON,Fixed,,Delivery,0.91,,,,,,,All,None
 177207,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,CARLTON,Fixed,,Delivery,0.91,,,,,,,All,None
 177111,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
@@ -160,8 +160,8 @@ Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End
 177230,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0.50211,,,,,,,All,None
 177188,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0,,,,,,,All,None
 177289,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0,,,,,,,All,None
-177091,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
-177192,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177091,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER MILLS,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177192,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER MILLS,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
 177103,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,ST.CLAIR,Fixed,,Delivery,1.71,,,,,,,All,None
 177204,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,ST.CLAIR,Fixed,,Delivery,1.71,,,,,,,All,None
 177130,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,ST.CLAIR,Fixed,,Delivery,2.10039,,,,,,,All,None
@@ -172,8 +172,8 @@ Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End
 177263,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,ST.CLAIR,Fixed,,Delivery,1.31,,,,,,,All,None
 177172,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
 177273,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
-177092,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
-177193,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177092,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER MILLS,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177193,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER MILLS,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
 177104,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,TRUMBLE RD.,Fixed,,Delivery,1.71,,,,,,,All,None
 177205,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,TRUMBLE RD.,Fixed,,Delivery,1.71,,,,,,,All,None
 177131,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,TRUMBLE RD.,Fixed,,Delivery,2.10039,,,,,,,All,None

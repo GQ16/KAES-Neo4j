@@ -1,3 +1,4 @@
+//MARK: Points
 CREATE CONSTRAINT GasPoint_id_uniq IF NOT EXISTS FOR (g:GasPoint) REQUIRE g.id IS UNIQUE;
 CREATE CONSTRAINT Segment_id_uniq IF NOT EXISTS FOR (s:Segment) REQUIRE s.id IS UNIQUE;
 CREATE CONSTRAINT Pipeline_id_uniq IF NOT EXISTS FOR (s:Pipeline) REQUIRE s.id IS UNIQUE;
@@ -280,7 +281,7 @@ OPTIONAL MATCH (fp)<-[:FROM_POINT]-(es:Segment)-[:TO_POINT]->(tp)
 WITH fp, tp, coalesce(es.id, randomUUID()) AS segmentId
 MERGE (fp)<-[:FROM_POINT]-(s:Segment{id:segmentId})-[:TO_POINT]->(tp);
 
-//Set up zones
+//MARK: Set up zones
 MATCH path = (startPoint:GasPoint)(
     ()<-[:FROM_POINT]-()-[:TO_POINT]->()
 )+(endPoint:GasPoint)
@@ -308,7 +309,7 @@ WITH [x IN nodes(path) WHERE x:GasPoint] AS points
 MATCH (z:GasZone{pipeline:'GLGT', name:'EASTERN'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
-//Set Pipe Diameters
+//MARK: Set Pipe Diameters
 MATCH path = (startPoint:GasPoint)(
     ()<-[:FROM_POINT]-()-[:TO_POINT]->()
 )+(endPoint:GasPoint)
@@ -341,40 +342,67 @@ AND endPoint.id = 'SAULT STE MARIE'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 12, s.maxDiameter = 19);
 
-CREATE CONSTRAINT Util_uniq_id IF NOT EXISTS FOR (u:Util) REQUIRE u.id IS unique;
+//MARK: GASUTIL
+CREATE CONSTRAINT GasUtil_uniq_id IF NOT EXISTS FOR (u:GasUtil) REQUIRE u.id IS unique;
 
-LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/UTIL.csv' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
-MERGE (u:Util{id:row.`Rate Definition ID`})
+MERGE (u:GasUtil{id:row.`Rate Definition ID`})
 SET u.rate = toFloat(row.Rate)
 , u.startDate = date(apoc.date.convertFormat(row.`Start Date` , "M/d/yyyy", "date"))
 , u.endDate = date(apoc.date.convertFormat(row.`End Date` , "M/d/yyyy", "date"))
 , u.firmOrInter = row.`Rate Schedule`;
 
-LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/UTIL.csv' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Rec Loc Type` = 'Zone'
 MATCH (z:GasZone{pipeline:row.Pipeline , name:row.`Rec Loc ID`})
-MATCH (u:Util{id:row.`Rate Definition ID`})
+MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_RECEIPT]->(z);
 
-LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/UTIL.csv' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Del Loc Type` = 'Zone'
 MATCH (z:GasZone{pipeline:row.Pipeline , name:row.`Del Loc ID`})
-MATCH (u:Util{id:row.`Rate Definition ID`})
+MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_DELIVERY]->(z);
 
-LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/UTIL.csv' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Rec Loc Type` = 'Location'
 MATCH (g:GasPoint{id:row.`Rec Loc ID`})
-MATCH (u:Util{id:row.`Rate Definition ID`})
+MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_RECEIPT]->(g);
 
-LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/UTIL.csv' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Del Loc Type` = 'Location'
 MATCH (g:GasPoint{id:row.`Del Loc ID`})
-MATCH (u:Util{id:row.`Rate Definition ID`})
+MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_DELIVERY]->(g);
+
+//MARK: GASFUEL
+CREATE CONSTRAINT GasFuel_uniq_id IF NOT EXISTS FOR (f:GasFuel) REQUIRE f.id IS unique;
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/FUEL.csv' AS row
+WITH row
+MERGE (f:GasFuel{id:row.`Rate Definition ID`})
+SET 
+  f.rate = toFloat(row.Rate)
+, f.startDate = date(apoc.date.convertFormat(row.`Start Date` , "M/d/yyyy", "date"))
+, f.endDate = date(apoc.date.convertFormat(row.`End Date` , "M/d/yyyy", "date"))
+, f.firmOrInter = row.`Rate Schedule`;
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/FUEL.csv' AS row
+WITH row
+WHERE row.`Rec Loc Type` = 'Location'
+MATCH (g:GasPoint{id:row.`Rec Loc ID`})
+MATCH (f:GasFuel{id:row.`Rate Definition ID`})
+MERGE (f)-[:HAS_RECEIPT]->(g);
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/FUEL.csv' AS row
+WITH row
+WHERE row.`Del Loc Type` = 'Location'
+MATCH (g:GasPoint{id:row.`Del Loc ID`})
+MATCH (f:GasFuel{id:row.`Rate Definition ID`})
+MERGE (f)-[:HAS_DELIVERY]->(g);
