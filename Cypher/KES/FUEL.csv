@@ -1,0 +1,196 @@
+Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End Date,Rate Category,Season,Rec Loc Type,Rec Loc ID,Del Loc Type,Del Loc ID,Rate Type,Rate Unit,Charge Indicator,Rate,Rate Override,Custody Contract,Shipper,Custody Deal,Buy/Sell Deal,Comments,Product Category,Products
+177093,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER,Fixed,,Delivery,1.71,,,,,,,All,None
+177194,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,BELLE RIVER,Fixed,,Delivery,1.71,,,,,,,All,None
+177115,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER,Fixed,,Delivery,2.10039,,,,,,,All,None
+177216,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,BELLE RIVER,Fixed,,Delivery,2.10039,,,,,,,All,None
+177133,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER,Fixed,,Delivery,0.77209,,,,,,,All,None
+177234,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,BELLE RIVER,Fixed,,Delivery,0.77209,,,,,,,All,None
+177150,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER,Fixed,,Delivery,1.31,,,,,,,All,None
+177251,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,BELLE RIVER,Fixed,,Delivery,1.31,,,,,,,All,None
+177174,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177275,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,BELLE RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177106,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,CARLTON,Fixed,,Delivery,0.91,,,,,,,All,None
+177207,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,CARLTON,Fixed,,Delivery,0.91,,,,,,,All,None
+177111,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177212,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177116,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CARLTON,Fixed,,Delivery,0.90654,,,,,,,All,None
+177217,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CARLTON,Fixed,,Delivery,0.91,,,,,,,All,None
+177134,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177235,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177151,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177252,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177164,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177265,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177175,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177276,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CARLTON,Fixed,,Delivery,0,,,,,,,All,None
+177094,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,CHIPPEWA,Fixed,,Delivery,1.44,,,,,,,All,None
+177195,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,CHIPPEWA,Fixed,,Delivery,1.44,,,,,,,All,None
+177117,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CHIPPEWA,Fixed,,Delivery,1.96912,,,,,,,All,None
+177218,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CHIPPEWA,Fixed,,Delivery,1.96912,,,,,,,All,None
+177135,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CHIPPEWA,Fixed,,Delivery,0.50211,,,,,,,All,None
+177236,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CHIPPEWA,Fixed,,Delivery,0.50211,,,,,,,All,None
+177152,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CHIPPEWA,Fixed,,Delivery,1.04,,,,,,,All,None
+177253,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CHIPPEWA,Fixed,,Delivery,1.04,,,,,,,All,None
+177165,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CHIPPEWA,Fixed,,Delivery,0,,,,,,,All,None
+177266,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CHIPPEWA,Fixed,,Delivery,0,,,,,,,All,None
+177176,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CHIPPEWA,Fixed,,Delivery,0,,,,,,,All,None
+177277,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CHIPPEWA,Fixed,,Delivery,0,,,,,,,All,None
+177095,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177196,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177118,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CLOW,Fixed,,Delivery,0.50211,,,,,,,All,None
+177219,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,CLOW,Fixed,,Delivery,0.50211,,,,,,,All,None
+177136,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177237,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177153,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177254,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177166,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177267,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177177,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177278,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,CLOW,Fixed,,Delivery,0,,,,,,,All,None
+177096,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,DEWARD,Fixed,,Delivery,1.31,,,,,,,All,None
+177197,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,DEWARD,Fixed,,Delivery,1.31,,,,,,,All,None
+177119,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,DEWARD,Fixed,,Delivery,1.83754,,,,,,,All,None
+177220,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,DEWARD,Fixed,,Delivery,1.83754,,,,,,,All,None
+177137,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,DEWARD,Fixed,,Delivery,0,,,,,,,All,None
+177238,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,DEWARD,Fixed,,Delivery,0,,,,,,,All,None
+177154,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,DEWARD,Fixed,,Delivery,0.91,,,,,,,All,None
+177255,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,DEWARD,Fixed,,Delivery,0.91,,,,,,,All,None
+177178,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,DEWARD,Fixed,,Delivery,0,,,,,,,All,None
+177279,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,DEWARD,Fixed,,Delivery,0,,,,,,,All,None
+177191,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,WAKEFIELD,Location,DEWARD,Fixed,,Delivery,1.04,,,,,,,All,None
+177292,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,WAKEFIELD,Location,DEWARD,Fixed,,Delivery,1.04,,,,,,,All,None
+177097,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177198,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177107,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177208,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177112,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177213,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177138,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177239,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177155,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177256,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177167,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177268,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177179,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177280,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,EMERSON,Fixed,,Delivery,0,,,,,,,All,None
+177120,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,ENGADINE,Fixed,,Delivery,1.57333,,,,,,,All,None
+177221,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,ENGADINE,Fixed,,Delivery,1.57333,,,,,,,All,None
+177139,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,ENGADINE,Fixed,,Delivery,0,,,,,,,All,None
+177240,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,ENGADINE,Fixed,,Delivery,0,,,,,,,All,None
+177156,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,ENGADINE,Fixed,,Delivery,0.64,,,,,,,All,None
+177257,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,ENGADINE,Fixed,,Delivery,0.64,,,,,,,All,None
+177098,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,FARWELL,Fixed,,Delivery,1.44,,,,,,,All,None
+177199,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,FARWELL,Fixed,,Delivery,1.44,,,,,,,All,None
+177121,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,FARWELL,Fixed,,Delivery,1.83754,,,,,,,All,None
+177222,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,FARWELL,Fixed,,Delivery,1.83754,,,,,,,All,None
+177157,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,FARWELL,Fixed,,Delivery,1.04,,,,,,,All,None
+177258,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,FARWELL,Fixed,,Delivery,1.04,,,,,,,All,None
+177168,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,FARWELL,Fixed,,Delivery,0,,,,,,,All,None
+177269,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,FARWELL,Fixed,,Delivery,0,,,,,,,All,None
+177180,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,FARWELL,Fixed,,Delivery,0,,,,,,,All,None
+177281,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,FARWELL,Fixed,,Delivery,0,,,,,,,All,None
+177099,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,FORTUNE LAKE,Fixed,,Delivery,0.77,,,,,,,All,None
+177200,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,FORTUNE LAKE,Fixed,,Delivery,0.77,,,,,,,All,None
+177108,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,FORTUNE LAKE,Fixed,,Delivery,1.31,,,,,,,All,None
+177209,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,FORTUNE LAKE,Fixed,,Delivery,1.31,,,,,,,All,None
+177113,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177214,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177122,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,FORTUNE LAKE,Fixed,,Delivery,1.30769,,,,,,,All,None
+177223,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,FORTUNE LAKE,Fixed,,Delivery,1.30769,,,,,,,All,None
+177140,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177241,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177169,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177270,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177181,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177282,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,FORTUNE LAKE,Fixed,,Delivery,0,,,,,,,All,None
+177123,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,GRAND RAPID,Fixed,,Delivery,0.77209,,,,,,,All,None
+177224,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,GRAND RAPID,Fixed,,Delivery,0.77209,,,,,,,All,None
+177141,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,GRAND RAPID,Fixed,,Delivery,0,,,,,,,All,None
+177242,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,GRAND RAPID,Fixed,,Delivery,0,,,,,,,All,None
+177182,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,GRAND RAPID,Fixed,,Delivery,0,,,,,,,All,None
+177283,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,GRAND RAPID,Fixed,,Delivery,0,,,,,,,All,None
+177100,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177201,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177109,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,LAMMERS,Fixed,,Delivery,0.64,,,,,,,All,None
+177210,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,LAMMERS,Fixed,,Delivery,0.64,,,,,,,All,None
+177114,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177215,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,DEWARD,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177124,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,LAMMERS,Fixed,,Delivery,0.63728,,,,,,,All,None
+177225,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,LAMMERS,Fixed,,Delivery,0.63728,,,,,,,All,None
+177142,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177243,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177158,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177259,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177170,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177271,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177183,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177284,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,LAMMERS,Fixed,,Delivery,0,,,,,,,All,None
+177337,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,MANISTIQUE,Fixed,,Delivery,1.44069,,,,,,,All,None
+177101,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,MIDLAND,Fixed,,Delivery,1.44,,,,,,,All,None
+177202,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,MIDLAND,Fixed,,Delivery,1.44,,,,,,,All,None
+177105,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CHIPPEWA,Location,MIDLAND,Fixed,,Delivery,0.5,,,,,,,All,None
+177206,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CHIPPEWA,Location,MIDLAND,Fixed,,Delivery,0.5,,,,,,,All,None
+177126,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,MIDLAND,Fixed,,Delivery,1.96912,,,,,,,All,None
+177227,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,MIDLAND,Fixed,,Delivery,1.96912,,,,,,,All,None
+177144,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,MIDLAND,Fixed,,Delivery,0.50211,,,,,,,All,None
+177245,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,MIDLAND,Fixed,,Delivery,0.50211,,,,,,,All,None
+177160,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,MIDLAND,Fixed,,Delivery,1.04,,,,,,,All,None
+177261,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,MIDLAND,Fixed,,Delivery,1.04,,,,,,,All,None
+177185,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,MIDLAND,Fixed,,Delivery,0,,,,,,,All,None
+177286,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,MIDLAND,Fixed,,Delivery,0,,,,,,,All,None
+177127,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,RAPID RIVER,Fixed,,Delivery,1.44069,,,,,,,All,None
+177228,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,RAPID RIVER,Fixed,,Delivery,1.44069,,,,,,,All,None
+177145,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177246,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177171,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177272,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177186,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177287,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,RAPID RIVER,Fixed,,Delivery,0,,,,,,,All,None
+177102,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,RATTLE RUN,Fixed,,Delivery,1.71,,,,,,,All,None
+177203,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,RATTLE RUN,Fixed,,Delivery,1.71,,,,,,,All,None
+177128,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,RATTLE RUN,Fixed,,Delivery,2.10039,,,,,,,All,None
+177229,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,RATTLE RUN,Fixed,,Delivery,2.10039,,,,,,,All,None
+177146,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,RATTLE RUN,Fixed,,Delivery,0.63728,,,,,,,All,None
+177247,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,RATTLE RUN,Fixed,,Delivery,0.63728,,,,,,,All,None
+177161,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,RATTLE RUN,Fixed,,Delivery,1.31,,,,,,,All,None
+177262,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,RATTLE RUN,Fixed,,Delivery,1.31,,,,,,,All,None
+177187,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,RATTLE RUN,Fixed,,Delivery,0,,,,,,,All,None
+177288,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,RATTLE RUN,Fixed,,Delivery,0,,,,,,,All,None
+177129,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,1.70561,,,,,,,All,None
+177230,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0.50211,,,,,,,All,None
+177188,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0,,,,,,,All,None
+177289,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,SAULT STE MARIE TCPL,Fixed,,Delivery,0,,,,,,,All,None
+177091,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177192,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177103,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,ST.CLAIR,Fixed,,Delivery,1.71,,,,,,,All,None
+177204,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,ST.CLAIR,Fixed,,Delivery,1.71,,,,,,,All,None
+177130,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,ST.CLAIR,Fixed,,Delivery,2.10039,,,,,,,All,None
+177231,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,ST.CLAIR,Fixed,,Delivery,2.10039,,,,,,,All,None
+177147,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,ST.CLAIR,Fixed,,Delivery,0.77209,,,,,,,All,None
+177248,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,ST.CLAIR,Fixed,,Delivery,0.77209,,,,,,,All,None
+177162,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,ST.CLAIR,Fixed,,Delivery,1.31,,,,,,,All,None
+177263,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,ST.CLAIR,Fixed,,Delivery,1.31,,,,,,,All,None
+177172,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177273,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,ST.CLAIR,Fixed,,Delivery,0.5,,,,,,,All,None
+177092,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177193,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,BELLE RIVER,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177104,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,TRUMBLE RD.,Fixed,,Delivery,1.71,,,,,,,All,None
+177205,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CARLTON,Location,TRUMBLE RD.,Fixed,,Delivery,1.71,,,,,,,All,None
+177131,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,TRUMBLE RD.,Fixed,,Delivery,2.10039,,,,,,,All,None
+177232,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,TRUMBLE RD.,Fixed,,Delivery,2.10039,,,,,,,All,None
+177148,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,TRUMBLE RD.,Fixed,,Delivery,0.63728,,,,,,,All,None
+177249,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,TRUMBLE RD.,Fixed,,Delivery,0.63728,,,,,,,All,None
+177163,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,TRUMBLE RD.,Fixed,,Delivery,1.31,,,,,,,All,None
+177264,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FORTUNE LAKE,Location,TRUMBLE RD.,Fixed,,Delivery,1.31,,,,,,,All,None
+177173,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,TRUMBLE RD.,Fixed,,Delivery,0.5,,,,,,,All,None
+177274,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,RATTLE RUN,Location,TRUMBLE RD.,Fixed,,Delivery,0.5,,,,,,,All,None
+177189,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177290,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,TRUMBLE RD.,Fixed,,Delivery,0,,,,,,,All,None
+177110,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,WAKEFIELD,Fixed,,Delivery,1.17,,,,,,,All,None
+177211,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,CLOW,Location,WAKEFIELD,Fixed,,Delivery,1.17,,,,,,,All,None
+177132,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,WAKEFIELD,Fixed,,Delivery,1.17434,,,,,,,All,None
+177233,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,EMERSON,Location,WAKEFIELD,Fixed,,Delivery,1.17434,,,,,,,All,None
+177149,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,WAKEFIELD,Fixed,,Delivery,0,,,,,,,All,None
+177250,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,FARWELL,Location,WAKEFIELD,Fixed,,Delivery,0,,,,,,,All,None
+177190,FT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,WAKEFIELD,Fixed,,Delivery,0,,,,,,,All,None
+177291,IT,FUEL,Percent,6/1/2024,6/30/2024,TR,,Location,ST.CLAIR,Location,WAKEFIELD,Fixed,,Delivery,0,,,,,,,All,None
