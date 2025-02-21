@@ -36,7 +36,7 @@ public class Processes {
                         WHERE lpg.name = $product 
                         AND mo.id = 'RAIL'
 
-                        RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeHopsAllowed THEN 2 ELSE 1 END AS qppMax
+                        RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
                         """, Values.parameters("product", product))
                     .forEachRemaining(record -> {
                         locationHopsMap.put(
