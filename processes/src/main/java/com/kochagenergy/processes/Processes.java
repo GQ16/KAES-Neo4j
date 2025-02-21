@@ -22,8 +22,6 @@ public class Processes {
     static String product = "UAN";
 
     public static void main(String[] args) {
-
-
         try (var driver = GraphDatabase.driver(dbUri, AuthTokens.basic(dbUser, dbPassword))) {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
