@@ -1,9 +1,11 @@
 package com.kochagenergy.processes;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Values;
@@ -16,54 +18,24 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String dbUri = "neo4j+s://neo4j.data-services-dev.kaes.io";
+    static final String dbUri = "neo4j+s://neo4j.data-services.kaes.io";
     static final String dbUser = "gehad_qaki";
     static final String dbPassword = "frog-robin-jacket-halt-swim-7015";
-    static String product = "UAN";
+    static String product = "AMMONIA";
 
     public static void main(String[] args) {
         try (var driver = GraphDatabase.driver(dbUri, AuthTokens.basic(dbUser, dbPassword))) {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
-            try (Session session = driver.session()) {
-                Map<String, Integer> locationHopsMap = new HashMap<>();
-                session
-                    .run("""
-                        MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
-                        WHERE lpg.name = $product 
-                        AND mo.id = 'RAIL'
-
-                        RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
-                        """, Values.parameters("product", product))
-                    .forEachRemaining(record -> {
-                        locationHopsMap.put(
-                            record.get("locationId").asString()
-                            , record.get("qppMax").asInt()
-                        );
-                    });
-
-                System.out.println("Location Count: " + locationHopsMap.size());
-                locationHopsMap.forEach((locationId, qppMax) -> {
-                    session.run(getCacheQueryString(product, qppMax), 
-                        Values.parameters(
-                            "locationId", locationId
-                            , "product", product
-                            , "uom", "ST"
-                            , "currency", "USD")
-                    );
-                    counter++;
-                    System.out.println("Compelted: " + String.valueOf(counter) + "/" + locationHopsMap.size());
-                });
-            } catch (ClientException e) {
-                e.printStackTrace();
-            }
+            // railCache(driver);
+            truckCache(driver);
 
             driver.close();
         }
     }
 
-    private static String getCacheQueryString(String product, Integer qppMax) {
+    private static String getRailCacheQueryString(String product, Integer qppMax) {
         return String.format("""
         MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
         WHERE lpg.name = $product 
@@ -349,5 +321,153 @@ public class Processes {
         MERGE (rc)-[:HAS_DESTINATION]->(dl)
         MERGE (rc)-[:HAS_ORIGIN]->(ol)
         """, product, product, product, qppMax, product);
+    }
+
+    private static void railCache(final Driver driver) {
+        try (Session session = driver.session()) {
+            Map<String, Integer> locationHopsMap = new HashMap<>();
+            session
+                    .run("""
+                        MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
+                        WHERE lpg.name = $product
+                        AND mo.id = 'RAIL'
+
+                        RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
+                        """, Values.parameters("product", product))
+                    .forEachRemaining(record -> {
+                        locationHopsMap.put(
+                                record.get("locationId").asString()
+                                , record.get("qppMax").asInt()
+                        );
+                    });
+            
+            System.out.println("Location Count: " + locationHopsMap.size());
+            locationHopsMap.forEach((locationId, qppMax) -> {
+                session.run(getRailCacheQueryString(product, qppMax),
+                        Values.parameters(
+                                "locationId", locationId
+                                , "product", product
+                                , "uom", "ST"
+                                , "currency", "USD")
+                );
+                counter++;
+                System.out.println("Rail Compelted: " + String.valueOf(counter) + "/" + locationHopsMap.size());
+            });
+        } catch (ClientException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void truckCache(final Driver driver) {
+        try (Session session = driver.session()) {
+            List<String> zips = session.run("""
+                    MATCH (:Country{id:'US'})<-[:IN_COUNTRY]-(z:ZipCode)
+                    RETURN DISTINCT z.id AS zip
+                    """)
+                .list(record -> record.get(0).asString());
+            
+            System.out.println("Zip Count: " + zips.size());
+            zips.forEach(zip -> {
+                session.run("""
+                    MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Occupant)-[ci:COMPETES_IN]->(ds:StateOrProvince)<-[is2:IN_STATE]-(dz:ZipCode)-[:IN_COUNTRY]->(co:Country)
+                    , (ol)-[:IN_GEOGRAPHY]->()<-[:FROM]-(route:TruckRoute)-[:TO]->(co)
+                    , (occ)-[:CAN_STORE]->(lpg:LogisticsProductGroup)<-[:FOR_PRODUCTGROUP]-(route)
+                    , (ol)-[:HAS_OUTBOUND]->(mo:Mode)
+
+                    WHERE dz.id = $destinationZip
+                    AND dz.country = 'US'
+                    AND co.id = 'US'
+                    AND mo.id = 'TRUCK'
+                    AND occ:Koch
+                    AND lpg.name = $product
+
+                    MATCH (route)-[:HAS_CURRENT_RATE]->(cr:TruckRate)
+                    WHERE cr.shipWindowStartDate <= date() <= cr.shipWindowEndDate
+
+                    MATCH (ol)-[:IN_ZIPCODE]->(oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]->(dz)
+                    WHERE cr.distanceLower <= tdt.distance < cr.distanceUpper
+                    
+                    CALL{
+                        WITH lpg, ol
+                        MATCH (tFSC:ActiveFSC)-[fp2:FOR_PRODUCTGROUP]->(lpg)
+                        , (tFSC)-[:FOR_ORIGIN_COUNTRY]->()<-[:IN_COUNTRY]-(ol)
+                        RETURN tFSC
+                    }
+
+                    WITH DISTINCT ol, dz, occ, lpg, cr, tFSC
+                    , cr.distanceUom AS distUom
+                    , tdt.distance AS dist
+                    , route.score AS score
+                    , route.id AS routeId
+
+                    WITH *
+                    ORDER BY score
+                    WITH ol, dz, occ, lpg, tFSC, distUom, dist, collect(cr)[0] AS cr
+
+                    WITH ol, dz, occ, lpg, dist, distUom, tFSC.rate AS fsc, cr.currency AS rateCurr, cr.rateUom AS rateUom
+                    , cr.ratePerUom AS ratePerUom, cr.loadQuantity AS loadQty, toUpper(cr.rateFactorType) AS rateFactor, cr.shipWindowEndDate AS expirationDate
+
+                    WITH ol, dz, occ, lpg, fsc, dist, distUom, expirationDate, rateCurr, rateUom, ratePerUom, loadQty, rateFactor,
+                    CASE rateFactor
+                        WHEN 'DISTANCE' THEN (ratePerUom*dist)/(loadQty)
+                        ELSE ratePerUom
+                    END AS rate
+
+                    WITH ol, dz, occ, lpg
+                    , ratePerUom AS originalRate
+                    , rateFactor
+                    , dist
+                    , distUom
+                    , loadQty
+                    , rate AS ratePerUom
+                    , fsc*100 AS fscRate
+                    , '%' AS fscRateUom
+                    , fsc * rate AS calculatedFsc
+                    , rate * (1+fsc) AS allInfreight
+                    , expirationDate
+                    , rateUom AS uom
+                    , rateCurr AS currency
+                    ORDER BY allInfreight
+
+                    MATCH (ol)-[:IN_ZIPCODE]->(oz:ZipCode)
+
+                    WITH oz
+                    , dz
+                    , lpg
+                    , {
+                        id: oz.id + '|#|' + oz.country + '|#|' + dz.id + '|#|' + dz.country + '|#|' + lpg.name + '|#|' + currency + '|#|' + uom
+                        , originalRate: originalRate
+                        , rateFactor: rateFactor
+                        , dist: dist
+                        , distUom: distUom
+                        , loadQty: loadQty
+                        , ratePerUom: round(ratePerUom, 4)
+                        , fscRate: round(fscRate, 4)
+                        , fscRateUom: fscRateUom
+                        , calculatedFsc: round(calculatedFsc, 4)
+                        , allInfreight: round(allInfreight, 4)
+                        , expirationDate: expirationDate
+                        , uom: uom
+                        , currency: currency
+                    } AS truckCacheProperties
+
+                    MERGE (tc:TruckCache {id: truckCacheProperties.id})
+                    SET tc = truckCacheProperties
+                    SET tc.last_update_date = datetime()
+                    MERGE (tc)-[:HAS_DESTINATION]->(dz)
+                    MERGE (tc)-[:HAS_ORIGIN]->(oz)
+                    MERGE (tc)<-[:FOR_TRUCK_CACHE]-(lpg)
+                    """, 
+                    Values.parameters(
+                        "destinationZip", zip,
+                        "product", product
+                    )
+                );
+                counter++;
+                System.out.println("Truck Compelted: " + String.valueOf(counter) + "/" + zips.size());
+            });
+        } catch (ClientException e) {
+            e.printStackTrace();
+        }
     }
 }
