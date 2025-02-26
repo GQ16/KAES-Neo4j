@@ -277,13 +277,13 @@ WITH pointPairs
 MERGE (fp:GasPoint{id:pointPairs.fromPoint})
 MERGE (tp:GasPoint{id:pointPairs.toPoint})
 WITH fp, tp
-OPTIONAL MATCH (fp)<-[:FROM_POINT]-(es:Segment)-[:TO_POINT]->(tp)
+OPTIONAL MATCH (fp)<-[:CONNECTS]-(es:Segment)-[:CONNECTS]->(tp)
 WITH fp, tp, coalesce(es.id, randomUUID()) AS segmentId
-MERGE (fp)<-[:FROM_POINT]-(s:Segment{id:segmentId})-[:TO_POINT]->(tp);
+MERGE (fp)<-[:CONNECTS]-(s:Segment{id:segmentId})-[:CONNECTS]->(tp);
 
 //MARK: Set up zones
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'EMERSON'
 AND endPoint.id = 'SUPERIOR'
@@ -292,7 +292,7 @@ MATCH (z:GasZone{pipeline:'GLGT', name:'WESTERN'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'ASHLAND'
 AND (endPoint.id = 'JORDAN VALLEY' OR endPoint.id = 'SAULT STE MARIE TCPL')
@@ -301,7 +301,7 @@ MATCH (z:GasZone{pipeline:'GLGT', name:'CENTRAL'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'SOUTH CHESTER'
 AND endPoint.id = 'CHINA'
@@ -311,7 +311,7 @@ FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
 //MARK: Set Pipe Diameters
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'EMERSON'
 AND endPoint.id = 'ST.IGNACE'
@@ -319,7 +319,7 @@ WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 30, s.maxDiameter = 42);
 
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'ST.IGNACE'
 AND endPoint.id = 'MACKINAW'
@@ -327,7 +327,7 @@ WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 20, s.maxDiameter = 26);
 
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'MACKINAW'
 AND endPoint.id = 'CHINA'
@@ -335,7 +335,7 @@ WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 30, s.maxDiameter = 42);
 
 MATCH path = (startPoint:GasPoint)(
-    ()<-[:FROM_POINT]-()-[:TO_POINT]->()
+    ()<-[:CONNECTS]-()-[:CONNECTS]->()
 )+(endPoint:GasPoint)
 WHERE startPoint.id = 'ENGADINE'
 AND endPoint.id = 'SAULT STE MARIE'
@@ -406,3 +406,60 @@ WHERE row.`Del Loc Type` = 'Location'
 MATCH (g:GasPoint{id:row.`Del Loc ID`})
 MATCH (f:GasFuel{id:row.`Rate Definition ID`})
 MERGE (f)-[:HAS_DELIVERY]->(g);
+
+//MARK: GasPointType
+CREATE CONSTRAINT GasPointType_uniq_id IF NOT EXISTS FOR (f:GasPointType) REQUIRE f.id IS unique;
+
+MERGE (r:GasPointType{id:'RECEIPT'})
+MERGE (d:GasPointType{id:'DELIVERY'})
+MERGE (s:GasPointType{id:'STORAGE'});
+
+MATCH (p:GasPoint)
+WHERE p.id IN [
+    'EMERSON'
+    , 'DEWARD'
+    , 'SOUTH CHESTER'
+    , 'FARWELL'
+    , 'MUTTONVILLE'
+    , 'ST.CLAIR'
+    , 'BELLE RIVER MILLS'
+]
+MATCH (type:GasPointType{id:'RECEIPT'})
+MERGE (p)-[:HAS_TYPE]->(type);
+
+MATCH (p:GasPoint)
+WHERE p.id IN [
+    'EMERSON'
+    , 'BEMIDJI'
+    , 'CARLTON'
+    , 'CLOQUET'
+    , 'DULUTH'
+    , 'WAKEFIELD'
+    , 'FORTUNE LAKE'
+    , 'CRYSTAL FALLS'
+    , 'RAPID RIVER'
+    , 'SAULT STE MARIE'
+    , 'GAYLORD'
+    , 'ALPINE'
+    , 'DEWARD'
+    , 'FARWELL'
+    , 'CHIPPEWA'
+    , 'MIDLAND'
+    , 'BIRCH RUN'
+    , 'MUTTONVILLE'
+    , 'ST.CLAIR'
+    , 'BELLE RIVER MILLS'
+    , 'TRUMBLE RD.'
+]
+MATCH (type:GasPointType{id:'DELIVERY'})
+MERGE (p)-[:HAS_TYPE]->(type);
+
+MATCH (p:GasPoint)
+WHERE p.id IN [
+    'SOUTH CHESTER'
+    , 'DEWARD'
+    , 'CHIPPEWA'
+    , 'BELLE RIVER MILLS'
+]
+MATCH (type:GasPointType{id:'STORAGE'})
+MERGE (p)-[:HAS_TYPE]->(type);
