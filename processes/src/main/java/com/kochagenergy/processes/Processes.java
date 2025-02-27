@@ -21,7 +21,7 @@ public class Processes {
     static final String dbUri = "neo4j+s://neo4j.data-services.kaes.io";
     static final String dbUser = "gehad_qaki";
     static final String dbPassword = "frog-robin-jacket-halt-swim-7015";
-    static String product = "AMMONIA";
+    static String product = "UAN";
 
     public static void main(String[] args) {
         try (var driver = GraphDatabase.driver(dbUri, AuthTokens.basic(dbUser, dbPassword))) {
@@ -314,7 +314,7 @@ public class Processes {
         
         MERGE (rc:RailCache{id:cacheProperties.id})
         SET rc = cacheProperties
-        SET rc.last_update_date = datetime()
+        SET rc.update_date = datetime()
 
         WITH rc, lpg, dl, ol
         MERGE (lpg)-[:FOR_RAIL_CACHE]->(rc)
@@ -361,8 +361,10 @@ public class Processes {
     private static void truckCache(final Driver driver) {
         try (Session session = driver.session()) {
             List<String> zips = session.run("""
-                    MATCH (:Country{id:'US'})<-[:IN_COUNTRY]-(z:ZipCode)
-                    RETURN DISTINCT z.id AS zip
+                    MATCH (:Country{id:'US'})<-[:IN_COUNTRY]-(z:ZipCode)-[:IN_STATE]->(s:StateOrProvince)
+                    WHERE (z)-[:TRUCK_DISTANCE_TO]-()
+                    AND NOT s.id IN ['PR', 'HI', 'AK']
+                    RETURN z.id AS zip ORDER BY zip
                     """)
                 .list(record -> record.get(0).asString());
             
@@ -453,7 +455,7 @@ public class Processes {
 
                     MERGE (tc:TruckCache {id: truckCacheProperties.id})
                     SET tc = truckCacheProperties
-                    SET tc.last_update_date = datetime()
+                    SET tc.update_date = datetime()
                     MERGE (tc)-[:HAS_DESTINATION]->(dz)
                     MERGE (tc)-[:HAS_ORIGIN]->(oz)
                     MERGE (tc)<-[:FOR_TRUCK_CACHE]-(lpg)
@@ -464,7 +466,7 @@ public class Processes {
                     )
                 );
                 counter++;
-                System.out.println("Truck Compelted: " + String.valueOf(counter) + "/" + zips.size());
+                System.out.println("Truck Compelted Destination Zip: " + zip + " - " + String.valueOf(counter) + "/" + zips.size());
             });
         } catch (ClientException e) {
             e.printStackTrace();
