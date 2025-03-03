@@ -18,13 +18,15 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String dbUri = "neo4j+s://neo4j.data-services.kaes.io";
-    static final String dbUser = "gehad_qaki";
-    static final String dbPassword = "frog-robin-jacket-halt-swim-7015";
+    static final String DB_URI = "neo4j+s://neo4j.data-services.kaes.io";
+    static final String DB_USER = "gehad_qaki";
+    static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
+    static String currency = "USD";
+    static String uom = "ST";
 
     public static void main(String[] args) {
-        try (var driver = GraphDatabase.driver(dbUri, AuthTokens.basic(dbUser, dbPassword))) {
+        try (var driver = GraphDatabase.driver(DB_URI, AuthTokens.basic(DB_USER, DB_PASS))) {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
@@ -215,7 +217,7 @@ public class Processes {
         }] AS rateMaps,
         CASE $uom
             WHEN 'ST' THEN 1
-            WHEN 'MT' THEN 0.892857
+            WHEN 'MT' THEN 1/1.10231
             WHEN 'GAM' THEN 302.114803
         END AS uomConvRate
 
@@ -347,14 +349,14 @@ public class Processes {
                         Values.parameters(
                                 "locationId", locationId
                                 , "product", product
-                                , "uom", "ST"
-                                , "currency", "USD")
+                                , "uom", uom
+                                , "currency", currency)
                 );
                 counter++;
                 System.out.println("Rail Compelted: " + String.valueOf(counter) + "/" + locationHopsMap.size());
             });
         } catch (ClientException e) {
-            e.printStackTrace();
+            System.err.println(e);
         }
     }
 
@@ -387,7 +389,7 @@ public class Processes {
                     WHERE cr.shipWindowStartDate <= date() <= cr.shipWindowEndDate
 
                     MATCH (ol)-[:IN_ZIPCODE]->(oz:ZipCode)-[tdt:TRUCK_DISTANCE_TO]->(dz)
-                    WHERE cr.distanceLower <= tdt.distance < cr.distanceUpper
+                    WHERE cr.distanceLower <= (CASE WHEN cr.distanceUom = 'KM' THEN tdt.distance * 1.609344 ELSE tdt.distance END) < cr.distanceUpper
                     
                     CALL{
                         WITH lpg, ol
@@ -398,7 +400,7 @@ public class Processes {
 
                     WITH DISTINCT ol, dz, occ, lpg, cr, tFSC
                     , cr.distanceUom AS distUom
-                    , tdt.distance AS dist
+                    , CASE WHEN cr.distanceUom = 'KM' THEN tdt.distance * 1.609344 ELSE tdt.distance END AS dist
                     , route.score AS score
                     , route.id AS routeId
 
@@ -413,7 +415,22 @@ public class Processes {
                     CASE rateFactor
                         WHEN 'DISTANCE' THEN (ratePerUom*dist)/(loadQty)
                         ELSE ratePerUom
-                    END AS rate
+                    END AS rate,
+                    CASE 
+                        WHEN rateUom = $uom THEN 1 
+                        WHEN rateUom = 'ST' AND $uom = 'MT' THEN 1/1.102311
+                        WHEN rateUom = 'ST' AND $uom = 'GAM' THEN 302.114803
+                        WHEN rateUom = 'MT' AND $uom = 'ST' THEN 1.102311
+                        WHEN rateUom = 'MT' AND $uom = 'GAM' THEN 338.36863
+                        WHEN rateUom = 'GAM' AND $uom = 'ST' THEN 0.00331
+                        WHEN rateUom = 'GAM' AND $uom = 'MT' THEN 0.00295536
+                    END AS convRate
+
+                    CALL {
+                        WITH rateCurr
+                        MATCH (:Currency{id: rateCurr})-[exch:HAS_EXCHANGE_RATE]->(:Currency{id: $currency})
+                        RETURN exch.rate AS exchRate
+                    }
 
                     WITH ol, dz, occ, lpg
                     , ratePerUom AS originalRate
@@ -424,11 +441,13 @@ public class Processes {
                     , rate AS ratePerUom
                     , fsc*100 AS fscRate
                     , '%' AS fscRateUom
-                    , fsc * rate AS calculatedFsc
-                    , rate * (1+fsc) AS allInfreight
+                    , fsc * rate * exchRate / convRate AS calculatedFsc
+                    , rate * exchRate * (1+fsc) / convRate AS allInfreight
                     , expirationDate
-                    , rateUom AS uom
-                    , rateCurr AS currency
+                    , rateUom AS originalUom
+                    , rateCurr AS originalCurrency
+                    , $uom AS uom
+                    , $currency AS currency
                     ORDER BY allInfreight
 
                     MATCH (ol)-[:IN_ZIPCODE]->(oz:ZipCode)
@@ -461,15 +480,17 @@ public class Processes {
                     MERGE (tc)<-[:FOR_TRUCK_CACHE]-(lpg)
                     """, 
                     Values.parameters(
-                        "destinationZip", zip,
-                        "product", product
+                        "destinationZip", zip
+                        , "product", product
+                        , "uom", uom
+                        , "currency", currency
                     )
                 );
                 counter++;
                 System.out.println("Truck Compelted Destination Zip: " + zip + " - " + String.valueOf(counter) + "/" + zips.size());
             });
         } catch (ClientException e) {
-            e.printStackTrace();
+            System.err.println(e);
         }
     }
 }
