@@ -21,7 +21,7 @@ public class Processes {
     static final String DB_URI = "neo4j+s://neo4j.data-services.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
-    static String product = "UAN";
+    static String product = "AMMONIA";
     static String currency = "USD";
     static String uom = "ST";
 
@@ -366,7 +366,7 @@ public class Processes {
                     MATCH (:Country{id:'US'})<-[:IN_COUNTRY]-(z:ZipCode)-[:IN_STATE]->(s:StateOrProvince)
                     WHERE (z)-[:TRUCK_DISTANCE_TO]-()
                     AND NOT s.id IN ['PR', 'HI', 'AK']
-                    RETURN z.id AS zip ORDER BY zip
+                    RETURN z.id AS zip ORDER BY zip DESC
                     """)
                 .list(record -> record.get(0).asString());
             
