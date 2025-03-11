@@ -1,5 +1,5 @@
 //MARK: Points
-CREATE CONSTRAINT GasPoint_id_uniq IF NOT EXISTS FOR (g:GasPoint) REQUIRE g.id IS UNIQUE;
+CREATE CONSTRAINT GasLocation_id_uniq IF NOT EXISTS FOR (g:GasLocation) REQUIRE g.id IS UNIQUE;
 CREATE CONSTRAINT Segment_id_uniq IF NOT EXISTS FOR (s:Segment) REQUIRE s.id IS UNIQUE;
 CREATE CONSTRAINT Pipeline_id_uniq IF NOT EXISTS FOR (s:Pipeline) REQUIRE s.id IS UNIQUE;
 CREATE CONSTRAINT GasZone_pipeline_and_zone_name_uniq IF NOT EXISTS FOR (z:GasZone) REQUIRE (z.pipeline, z.name) IS UNIQUE;
@@ -274,69 +274,69 @@ UNWIND [
 ] 
 AS pointPairs
 WITH pointPairs
-MERGE (fp:GasPoint{id:pointPairs.fromPoint})
-MERGE (tp:GasPoint{id:pointPairs.toPoint})
+MERGE (fp:GasLocation{id:pointPairs.fromPoint})
+MERGE (tp:GasLocation{id:pointPairs.toPoint})
 WITH fp, tp
 OPTIONAL MATCH (fp)<-[:CONNECTS]-(es:Segment)-[:CONNECTS]->(tp)
 WITH fp, tp, coalesce(es.id, randomUUID()) AS segmentId
 MERGE (fp)<-[:CONNECTS]-(s:Segment{id:segmentId})-[:CONNECTS]->(tp);
 
 //MARK: Set up zones
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'EMERSON'
 AND endPoint.id = 'SUPERIOR'
-WITH [x IN nodes(path) WHERE x:GasPoint] AS points
+WITH [x IN nodes(path) WHERE x:GasLocation] AS points
 MATCH (z:GasZone{pipeline:'GLGT', name:'WESTERN'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'ASHLAND'
 AND (endPoint.id = 'JORDAN VALLEY' OR endPoint.id = 'SAULT STE MARIE TCPL')
-WITH [x IN nodes(path) WHERE x:GasPoint] AS points
+WITH [x IN nodes(path) WHERE x:GasLocation] AS points
 MATCH (z:GasZone{pipeline:'GLGT', name:'CENTRAL'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'SOUTH CHESTER'
 AND endPoint.id = 'CHINA'
-WITH [x IN nodes(path) WHERE x:GasPoint] AS points
+WITH [x IN nodes(path) WHERE x:GasLocation] AS points
 MATCH (z:GasZone{pipeline:'GLGT', name:'EASTERN'})
 FOREACH (p IN points | MERGE (p)-[:PART_OF_ZONE]->(z));
 
 //MARK: Set Pipe Diameters
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'EMERSON'
 AND endPoint.id = 'ST.IGNACE'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 30, s.maxDiameter = 42);
 
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'ST.IGNACE'
 AND endPoint.id = 'MACKINAW'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 20, s.maxDiameter = 26);
 
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'MACKINAW'
 AND endPoint.id = 'CHINA'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 30, s.maxDiameter = 42);
 
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'ENGADINE'
 AND endPoint.id = 'SAULT STE MARIE'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
@@ -370,14 +370,14 @@ MERGE (u)-[:HAS_DELIVERY]->(z);
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Rec Loc Type` = 'Location'
-MATCH (g:GasPoint{id:row.`Rec Loc ID`})
+MATCH (g:GasLocation{id:row.`Rec Loc ID`})
 MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_RECEIPT]->(g);
 
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row
 WITH row
 WHERE row.`Del Loc Type` = 'Location'
-MATCH (g:GasPoint{id:row.`Del Loc ID`})
+MATCH (g:GasLocation{id:row.`Del Loc ID`})
 MATCH (u:GasUtil{id:row.`Rate Definition ID`})
 MERGE (u)-[:HAS_DELIVERY]->(g);
 
@@ -396,25 +396,25 @@ SET
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/FUEL.csv' AS row
 WITH row
 WHERE row.`Rec Loc Type` = 'Location'
-MATCH (g:GasPoint{id:row.`Rec Loc ID`})
+MATCH (g:GasLocation{id:row.`Rec Loc ID`})
 MATCH (f:GasFuel{id:row.`Rate Definition ID`})
 MERGE (f)-[:HAS_RECEIPT]->(g);
 
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/FUEL.csv' AS row
 WITH row
 WHERE row.`Del Loc Type` = 'Location'
-MATCH (g:GasPoint{id:row.`Del Loc ID`})
+MATCH (g:GasLocation{id:row.`Del Loc ID`})
 MATCH (f:GasFuel{id:row.`Rate Definition ID`})
 MERGE (f)-[:HAS_DELIVERY]->(g);
 
-//MARK: GasPointType
-CREATE CONSTRAINT GasPointType_uniq_id IF NOT EXISTS FOR (f:GasPointType) REQUIRE f.id IS unique;
+//MARK: GasLocationType
+CREATE CONSTRAINT GasLocationType_uniq_id IF NOT EXISTS FOR (f:GasLocationType) REQUIRE f.id IS unique;
 
-MERGE (r:GasPointType{id:'RECEIPT'})
-MERGE (d:GasPointType{id:'DELIVERY'})
-MERGE (s:GasPointType{id:'STORAGE'});
+MERGE (r:GasLocationType{id:'RECEIPT'})
+MERGE (d:GasLocationType{id:'DELIVERY'})
+MERGE (s:GasLocationType{id:'STORAGE'});
 
-MATCH (p:GasPoint)
+MATCH (p:GasLocation)
 WHERE p.id IN [
     'EMERSON'
     , 'DEWARD'
@@ -424,10 +424,10 @@ WHERE p.id IN [
     , 'ST.CLAIR'
     , 'BELLE RIVER MILLS'
 ]
-MATCH (type:GasPointType{id:'RECEIPT'})
+MATCH (type:GasLocationType{id:'RECEIPT'})
 MERGE (p)-[:HAS_TYPE]->(type);
 
-MATCH (p:GasPoint)
+MATCH (p:GasLocation)
 WHERE p.id IN [
     'EMERSON'
     , 'BEMIDJI'
@@ -451,15 +451,15 @@ WHERE p.id IN [
     , 'BELLE RIVER MILLS'
     , 'TRUMBLE RD.'
 ]
-MATCH (type:GasPointType{id:'DELIVERY'})
+MATCH (type:GasLocationType{id:'DELIVERY'})
 MERGE (p)-[:HAS_TYPE]->(type);
 
-MATCH (p:GasPoint)
+MATCH (p:GasLocation)
 WHERE p.id IN [
     'SOUTH CHESTER'
     , 'DEWARD'
     , 'CHIPPEWA'
     , 'BELLE RIVER MILLS'
 ]
-MATCH (type:GasPointType{id:'STORAGE'})
+MATCH (type:GasLocationType{id:'STORAGE'})
 MERGE (p)-[:HAS_TYPE]->(type);

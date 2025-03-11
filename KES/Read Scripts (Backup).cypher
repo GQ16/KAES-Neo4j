@@ -1,7 +1,7 @@
 //Point pairs table w/ util & fuel
-MATCH path = (startPoint:GasPoint)(
-    (:GasPoint)<-[]-(:Segment)-[]->(:GasPoint)
-)+(endPoint:GasPoint)
+MATCH path = (startPoint:GasLocation)(
+    (:GasLocation)<-[]-(:Segment)-[]->(:GasLocation)
+)+(endPoint:GasLocation)
 // WHERE startPoint.id = 'CARLTON'
 // AND endPoint.id = 'FARWELL'
 OPTIONAL MATCH (startPoint)<-[:HAS_RECEIPT]-(u1:GasUtil)-[:HAS_DELIVERY]->(endPoint)
@@ -16,18 +16,18 @@ RETURN startPoint.id AS startPoint, endPoint.id AS endPoint, GasUtilNode.rate AS
 ;
 
 //Start -> End Point
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'MAYFIELD'
 AND endPoint.id = 'CASS LAKE'
 RETURN path
 ;
 
 //Start -> End Point w/ util & fuel
-MATCH path = (startPoint:GasPoint)(
+MATCH path = (startPoint:GasLocation)(
     ()<-[:CONNECTS]-()-[:CONNECTS]->()
-)+(endPoint:GasPoint)
+)+(endPoint:GasLocation)
 WHERE startPoint.id = 'CARLTON'
 AND endPoint.id = 'FARWELL'
 OPTIONAL MATCH (startPoint)<-[:HAS_RECEIPT]-(u1:GasUtil)-[:HAS_DELIVERY]->(endPoint)

@@ -18,7 +18,7 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
@@ -30,8 +30,8 @@ public class Processes {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
-            // railCache(driver);
-            truckCache(driver);
+            railCache(driver);
+            // truckCache(driver);
 
             driver.close();
         }
@@ -342,7 +342,7 @@ public class Processes {
         , (occ)-[:CAN_STORE]->(lpg)
         , (ol)-[:HAS_OUTBOUND]->(mo)
 
-        MATCH path = (rr2)(
+        MATCH path = SHORTEST 1 (rr2)(
             ()-[:`%s_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`%s_TO`]-()
         ){0, %d}(rr1:RailRoute)-[:`%s_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
         WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
@@ -628,7 +628,8 @@ public class Processes {
             
             System.out.println("Location Count: " + locationHopsMap.size());
             locationHopsMap.forEach((locationId, qppMax) -> {
-                session.run(getRailCacheQueryString(product, qppMax),
+                // session.run(getRailCacheQueryString(product, qppMax),
+                session.run(getNewRailCacheQueryString(product, qppMax),
                         Values.parameters(
                                 "locationId", locationId
                                 , "product", product
