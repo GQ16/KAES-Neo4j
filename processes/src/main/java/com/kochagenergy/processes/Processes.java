@@ -609,8 +609,8 @@ public class Processes {
     }
 
     private static void railCache(final Driver driver) {
+        Map<String, Integer> locationHopsMap = new HashMap<>();
         try (Session session = driver.session()) {
-            Map<String, Integer> locationHopsMap = new HashMap<>();
             session
                     .run("""
                         MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
@@ -625,9 +625,14 @@ public class Processes {
                                 , record.get("qppMax").asInt()
                         );
                     });
+        } catch (ClientException e) {
+            System.err.println("Error Retrieving Location and QPP Maxes");
+            System.err.println(e);
+        }
             
-            System.out.println("Location Count: " + locationHopsMap.size());
-            locationHopsMap.forEach((locationId, qppMax) -> {
+        System.out.println("Location Count: " + locationHopsMap.size());
+        locationHopsMap.forEach((locationId, qppMax) -> {
+            try (Session session = driver.session()) {
                 // session.run(getRailCacheQueryString(product, qppMax),
                 session.run(getNewRailCacheQueryString(product, qppMax),
                         Values.parameters(
@@ -638,10 +643,12 @@ public class Processes {
                 );
                 counter++;
                 System.out.println("Rail Compelted: " + String.valueOf(counter) + "/" + locationHopsMap.size());
-            });
-        } catch (ClientException e) {
-            System.err.println(e);
-        }
+            } catch (ClientException e) {
+                System.err.println("Error Triggered by Location Id: " + locationId);
+                System.err.println("QPP Max Value: " + qppMax);
+                System.err.println(e);
+            }
+        });
     }
 
     private static void truckCache(final Driver driver) {
