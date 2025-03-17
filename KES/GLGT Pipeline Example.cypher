@@ -474,7 +474,7 @@ MERGE (i:Index{id:row.location_index})
 
 WITH row, i
 MATCH (l:Location)
-WHERE row.location STARTS WITH l.id
+WHERE row.Location STARTS WITH l.id
 MERGE (l)-[:PART_OF_INDEX]->(i)
 ;
 
