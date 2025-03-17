@@ -463,3 +463,18 @@ WHERE p.id IN [
 ]
 MATCH (type:GasLocationType{id:'STORAGE'})
 MERGE (p)-[:HAS_TYPE]->(type);
+
+//MARK: GasPrice
+CREATE CONSTRAINT GasPrice_uniq_id IF NOT EXISTS FOR (p:GasPrice) REQUIRE p.id IS unique;
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/PriceData.csv' AS row
+WITH row, date(apoc.date.convertFormat(row.Date,"M/d/yyyy",'date')) AS formattedDate
+WITH row, formattedDate, row.Location + "|" + formattedDate AS uniqueKey
+MATCH (l:GasLocation{id:row.Location})
+MERGE (p:GasPrice{id:uniqueKey})
+MERGE (l)-[:HAS_PRICE]->(p)
+SET p.price = toFloat(row.Price)
+, p.date = formattedDate
+, p.contract = row.Contract
+, p.update_date = datetime()
+;
