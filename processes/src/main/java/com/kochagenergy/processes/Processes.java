@@ -50,6 +50,7 @@ public class Processes {
         , (occ)-[:COMPETES_IN]->(ds:StateOrProvince)<-[:IN_STATE]-(dl)
         , (occ)-[:CAN_STORE]->(lpg)
         , (ol)-[:HAS_OUTBOUND]->(mo)
+        WHERE ol <> dl
 
         MATCH path = SHORTEST 1 (rr2)(
             ()-[:`%s_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`%s_TO`]-()
