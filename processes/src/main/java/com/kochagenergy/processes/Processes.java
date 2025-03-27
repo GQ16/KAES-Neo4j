@@ -18,10 +18,10 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services-uat.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
-    static String product = "UAN";
+    static String product = "UREA";
     static String currency = "USD";
     static String uom = "ST";
 
@@ -30,12 +30,18 @@ public class Processes {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
+            // test();
             railCache(driver);
             // truckCache(driver);
 
             driver.close();
         }
     }
+
+    private static void test() {
+        System.out.println(getRailCacheQueryString(product, 2));
+    }
+
     private static String getRailCacheQueryString(String product, Integer qppMax) {
         return String.format("""
         MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
