@@ -21,7 +21,7 @@ public class Processes {
     static final String DB_URI = "neo4j+s://neo4j.data-services-uat.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
-    static String product = "UREA";
+    static String product = "UAN";
     static String currency = "USD";
     static String uom = "ST";
 
@@ -31,8 +31,8 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            railCache(driver);
-            // truckCache(driver);
+            // railCache(driver);
+            truckCache(driver);
 
             driver.close();
         }
@@ -433,7 +433,6 @@ public class Processes {
 
                     WHERE dz.id = $destinationZip
                     AND dz.country = 'US'
-                    AND co.id = 'US'
                     AND mo.id = 'TRUCK'
                     AND occ:Koch
                     AND lpg.name = $product
