@@ -18,7 +18,7 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
@@ -31,8 +31,8 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            railCache(driver);
-            // truckCache(driver);
+            // railCache(driver);
+            truckCache(driver);
 
             driver.close();
         }
@@ -423,10 +423,21 @@ public class Processes {
 
     private static void truckCache(final Driver driver) {
         try (Session session = driver.session()) {
+            session.run("""
+                CALL apoc.periodic.iterate(
+                    "MATCH (lpg:LogisticsProductGroup)-[:FOR_TRUCK_CACHE]->(tc:TruckCache)
+                    WHERE lpg.name = $product
+                    RETURN tc",
+                    "DETACH DELETE tc"
+                ,{params:{product:$product}})
+                """, Values.parameters("product", product));
+            System.out.println(product + " Truck Cache Has been deleted.");
+
             List<String> zips = session.run("""
                     MATCH (:Country{id:'US'})<-[:IN_COUNTRY]-(z:ZipCode)-[:IN_STATE]->(s:StateOrProvince)
                     WHERE (z)-[:TRUCK_DISTANCE_TO]-()
                     AND NOT s.id IN ['PR', 'HI', 'AK']
+                    // AND s.id = 'IL'
                     RETURN z.id AS zip ORDER BY zip DESC
                     """)
                 .list(record -> record.get(0).asString());
