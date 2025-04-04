@@ -18,7 +18,7 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services-uat.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
@@ -31,8 +31,8 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            // railCache(driver);
-            truckCache(driver);
+            railCache(driver);
+            // truckCache(driver);
 
             driver.close();
         }
@@ -327,6 +327,14 @@ public class Processes {
     private static void railCache(final Driver driver) {
         Map<String, Integer> locationHopsMap = new HashMap<>();
         try (Session session = driver.session()) {
+            session.run("""
+                MATCH (lpg:LogisticsProductGroup)-[:FOR_RAIL_CACHE]->(rc:RailCache)
+                WHERE lpg.name = $product
+
+                DETACH DELETE rc
+                """, Values.parameters("product", product));
+            System.out.println(product + " Rail Cache Has been deleted.");
+
             session
                     .run("""
                         MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
