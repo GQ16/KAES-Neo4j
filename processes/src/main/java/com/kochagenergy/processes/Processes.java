@@ -31,8 +31,8 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            // railCache(driver);
-            truckCache(driver);
+            railCache(driver);
+            // truckCache(driver);
 
             driver.close();
         }

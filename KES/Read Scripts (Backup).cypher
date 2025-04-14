@@ -71,5 +71,13 @@ OPTIONAL MATCH path3 = (startPoint)-[:PART_OF_ZONE]->()<-[:HAS_RECEIPT]-(u3:Util
 OPTIONAL MATCH path4 = (startPoint)-[:PART_OF_ZONE]->()<-[:HAS_RECEIPT]-(u4:Util{firmOrInter:$firmOrInter})-[:HAS_DELIVERY]->()<-[:PART_OF_ZONE]-(endPoint)
 OPTIONAL MATCH path5 = (startPoint)<-[:HAS_RECEIPT]-(f:Fuel{firmOrInter:$firmOrInter})-[:HAS_DELIVERY]->(endPoint)
 
-RETURN *
+WITH DISTINCT startPoint, endPoint, coalesce(u1,u2,u3,u4) AS UtilNode, f, sp, ep
+WHERE f.firmOrInter = UtilNode.firmOrInter
+RETURN startPoint.id AS startPoint
+, endPoint.id AS endPoint
+, UtilNode.rate AS util
+, f.rate AS fuel
+, f.firmOrInter AS firmOrInter
+, sp.price AS startPrice
+, ep.price AS endPrice
 ;
