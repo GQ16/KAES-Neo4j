@@ -58,7 +58,7 @@ public class Processes {
         , (ol)-[:HAS_OUTBOUND]->(mo)
         WHERE ol <> dl
 
-        MATCH path = SHORTEST 1 (rr2)(
+        MATCH path = SHORTEST 5 (rr2)(
             ()-[:`%s_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`%s_TO`]-()
         ){0, %d}(rr1:RailRoute)-[:`%s_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
         WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
