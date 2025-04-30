@@ -261,10 +261,10 @@ UNWIND [
     },
     {
         fromPoint: "RATTLE RUN",
-        toPoint: "ST.CLAIR"
+        toPoint: "ST CLAIR"
     },
     {
-        fromPoint: "ST.CLAIR",
+        fromPoint: "ST CLAIR",
         toPoint: "BELLE RIVER MILLS"
     },
     {
@@ -424,7 +424,7 @@ WHERE p.id IN [
     , 'SOUTH CHESTER'
     , 'FARWELL'
     , 'MUTTONVILLE'
-    , 'ST.CLAIR'
+    , 'ST CLAIR'
     , 'BELLE RIVER MILLS'
 ]
 MATCH (type:LocationType{id:'RECEIPT'})
@@ -450,7 +450,7 @@ WHERE p.id IN [
     , 'MIDLAND'
     , 'BIRCH RUN'
     , 'MUTTONVILLE'
-    , 'ST.CLAIR'
+    , 'ST CLAIR'
     , 'BELLE RIVER MILLS'
     , 'TRUMBLE RD.'
 ]
