@@ -342,7 +342,10 @@ AND endPoint.id = 'SAULT STE MARIE'
 WITH [x IN nodes(path) WHERE x:Segment] AS segments
 FOREACH (s IN segments | SET s.minDiameter = 12, s.maxDiameter = 19);
 
-//MARK: UTIL
+//MARK: Rate
+CREATE CONSTRAINT Rate_uniq_id IF NOT EXISTS FOR (r:Rate) REQUIRE r.id IS unique;
+
+//Mark: Util
 CREATE CONSTRAINT Util_uniq_id IF NOT EXISTS FOR (u:Util) REQUIRE u.id IS unique;
 
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/GQ16/KAES-Neo4j/refs/heads/main/KES/UTIL.csv' AS row

@@ -1,5 +1,8 @@
 package com.kochagenergy.processes;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +42,15 @@ public class Processes {
     }
 
     private static void test() {
-        System.out.println(getRailCacheQueryString(product, 2));
+        String cypherQuery = getRailCacheQueryString(product, 2);
+        String filePath = "rail_cache_query.cypher";
+        
+        try {
+            Files.writeString(Path.of(filePath), cypherQuery);
+            System.out.println("Cypher query written to: " + filePath);
+        } catch (IOException e) {
+            System.err.println("Error writing cypher query to file: " + e.getMessage());
+        }
     }
 
     private static String getRailCacheQueryString(String product, Integer qppMax) {
@@ -53,7 +64,7 @@ public class Processes {
         WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)
         
         MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
-        , (occ)-[:COMPETES_IN]->(ds:StateOrProvince)<-[:IN_STATE]-(dl)
+        // , (occ)-[:COMPETES_IN]->(ds:StateOrProvince)<-[:IN_STATE]-(dl)
         , (occ)-[:CAN_STORE]->(lpg)
         , (ol)-[:HAS_OUTBOUND]->(mo)
         WHERE ol <> dl
@@ -327,6 +338,7 @@ public class Processes {
     private static void railCache(final Driver driver) {
         Map<String, Integer> locationHopsMap = new HashMap<>();
         try (Session session = driver.session()) {
+
             session.run("""
                 MATCH (lpg:LogisticsProductGroup)-[:FOR_RAIL_CACHE]->(rc:RailCache)
                 WHERE lpg.name = $product
@@ -342,6 +354,7 @@ public class Processes {
                         AND mo.id = 'RAIL'
 
                         RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
+                        ORDER BY locationId
                         """, Values.parameters("product", product))
                     .forEachRemaining(record -> {
                         locationHopsMap.put(
