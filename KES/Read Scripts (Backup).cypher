@@ -81,3 +81,16 @@ RETURN startPoint.id AS startPoint
 , sp.price AS startPrice
 , ep.price AS endPrice
 ;
+
+//MARK: Contracts
+MATCH (p:Pipeline)<-[:FOR_PIPELINE]-(c:Contract)-[:HAS_SEGMENT]->(cs:ContractSegment)
+, (fl:Location)<-[:FROM]-(cs)-[:TO]->(tl:Location)
+RETURN p.id AS pipeline
+, c.id AS contractId
+, c.startDate AS contractStart
+, c.endDate AS contractEnd
+, fl.id AS fromLocation
+, tl.id AS toLocation
+, cs.mdq AS mdq
+, cs.startDate AS segmentStart
+, cs.endDate AS segmentEnd
