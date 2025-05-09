@@ -21,7 +21,7 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
@@ -64,24 +64,24 @@ public class Processes {
         WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)
         
         MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
-        // , (occ)-[:COMPETES_IN]->(ds:StateOrProvince)<-[:IN_STATE]-(dl)
+        , (occ)-[:COMPETES_IN]->(ds:StateOrProvince)<-[:IN_STATE]-(dl)
         , (occ)-[:CAN_STORE]->(lpg)
         , (ol)-[:HAS_OUTBOUND]->(mo)
         WHERE ol <> dl
 
-        MATCH path = SHORTEST 5 (rr2)(
+        MATCH path = SHORTEST 3 (rr2)(
             ()-[:`%s_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`%s_TO`]-()
         ){0, %d}(rr1:RailRoute)-[:`%s_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
         WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
 
-        WITH DISTINCT ol, dl, lpg
+        WITH DISTINCT ol, dl, lpg, s1, s2
         , reverse([r IN nodes(path) WHERE r:RailRoute]) AS routes
-        , reverse([s2] + [x IN nodes(path) WHERE x:SPLC]) AS splcList
+        , reverse([x IN nodes(path) WHERE x:SPLC AND x <> s1]) AS interchangeList
         WHERE 1=1
         AND all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
-        
-        WITH *, size(routes) AS numberOfRoutes
-        
+
+        WITH *, size(routes) AS numberOfRoutes, [s1] + interchangeList + [s2] AS splcList
+
         CALL (routes, numberOfRoutes) {
                 WITH routes, numberOfRoutes
                 WHERE numberOfRoutes = 1
@@ -101,14 +101,14 @@ public class Processes {
                 MATCH (route1)-[:HAS_CURRENT_RATE]->(rate1:RailRate)
                 MATCH (route2)-[:HAS_CURRENT_RATE]->(rate2:RailRate)
                 WHERE 1=1
-                AND rate1.rule_11_at_destination_allowed 
-                AND NOT rate1.rule_11_at_origin_required 
-                AND rate2.rule_11_at_origin_allowed 
+                AND rate1.rule_11_at_destination_allowed
+                AND NOT rate1.rule_11_at_origin_required
+                AND rate2.rule_11_at_origin_allowed
                 AND NOT rate2.rule_11_at_destination_required
                 AND rate1.rate_effective <= date()
                 AND (date() <= rate1.rate_expiration OR rate1.rate_expiration IS NULL)
                 AND rate2.rate_effective <= date()
-                AND (date() <= rate2.rate_expiration OR rate2.rate_expiration IS NULL)				
+                AND (date() <= rate2.rate_expiration OR rate2.rate_expiration IS NULL)
                 AND rate1.min_cars = 1
                 AND rate2.min_cars = 1
                 AND ((rate1.car_owner_shipper = rate2.car_owner_shipper) OR (rate1.car_owner_carrier = rate2.car_owner_carrier))
@@ -122,29 +122,29 @@ public class Processes {
                 MATCH (route2)-[:HAS_CURRENT_RATE]->(rate2:RailRate)
                 MATCH (route3)-[:HAS_CURRENT_RATE]->(rate3:RailRate)
                 WHERE 1=1
-                AND rate1.rule_11_at_destination_allowed 
-                AND NOT rate1.rule_11_at_origin_required 
-                AND rate2.rule_11_at_destination_allowed 
-                AND rate2.rule_11_at_origin_allowed 
-                AND rate3.rule_11_at_origin_allowed 
+                AND rate1.rule_11_at_destination_allowed
+                AND NOT rate1.rule_11_at_origin_required
+                AND rate2.rule_11_at_destination_allowed
+                AND rate2.rule_11_at_origin_allowed
+                AND rate3.rule_11_at_origin_allowed
                 AND NOT rate3.rule_11_at_destination_required
                 AND rate1.rate_effective <= date()
                 AND (date() <= rate1.rate_expiration OR rate1.rate_expiration IS NULL)
                 AND rate2.rate_effective <= date()
                 AND (date() <= rate2.rate_expiration OR rate2.rate_expiration IS NULL)
                 AND rate3.rate_effective <= date()
-                AND (date() <= rate3.rate_expiration OR rate3.rate_expiration IS NULL)				
+                AND (date() <= rate3.rate_expiration OR rate3.rate_expiration IS NULL)
                 AND rate1.min_cars = 1
                 AND rate2.min_cars = 1
                 AND rate3.min_cars = 1
                 AND (
-                    (rate1.car_owner_shipper = rate2.car_owner_shipper = rate3.car_owner_shipper) 
+                    (rate1.car_owner_shipper = rate2.car_owner_shipper = rate3.car_owner_shipper)
                     OR (rate1.car_owner_carrier = rate2.car_owner_carrier = rate3.car_owner_carrier)
                 )
                 RETURN [rate1, rate2, rate3] AS rates
         }
-        
-        WITH ol, dl, routes, splcList, rates, lpg
+
+        WITH ol, dl, routes, splcList, interchangeList, rates, lpg
         , COLLECT{
             WITH apoc.coll.pairsMin(splcList) AS splcPairs, routes, range(1, numberOfRoutes) AS rowNums
             WITH splcPairs, apoc.coll.zip(rowNums,routes) AS rowRoutes
@@ -156,27 +156,27 @@ public class Processes {
             OPTIONAL MATCH (originSPLC)<-[:FROM_SPLC]-(r:RailMileage)-[:TO_SPLC]->(destSPLC)
 
             WITH rowNum, route, coalesce(r.distance,0) AS dist
-            
+
             , EXISTS{
                 (route)-[:HAS_ORIGIN_CARRIER]->(:Carrier)<-[:FROM_CARRIER]-(r)
             } AS origCarrierMatches
-            
+
             , EXISTS{
                 (r)-[:TO_CARRIER]->(:Carrier)<-[:HAS_DESTINATION_CARRIER]-(route)
             } AS destCarrierMatches
 
             WITH route, dist
-            , CASE 
+            , CASE
                 WHEN origCarrierMatches AND destCarrierMatches THEN 1
                 WHEN origCarrierMatches OR destCarrierMatches THEN 2
                 ELSE 3
             END AS mileageScore
             ORDER BY rowNum, mileageScore //Must order by rowNum to preserve route order
-            
+
             WITH route, collect(dist)[0] AS selectedDist
             RETURN selectedDist
         } AS dist
-        
+
         , COLLECT{
             UNWIND routes AS route
             MATCH (route)-[:HAS_CARRIER]->(ca:Carrier)
@@ -194,9 +194,10 @@ public class Processes {
         MATCH (cad)-[exch2:HAS_EXCHANGE_RATE]->(usd)
 
         WITH DISTINCT ol, dl, fuels, lpg, dist
-        , [s IN splcList| coalesce(s.r260,s.id)] AS routeSplcs
         , [s IN splcList| s.id] AS splcs
+        , [i IN interchangeList| i.r260] AS interchanges
         , [r IN rates| {
+            document: r.document,
             baseRate: r.rate,
             rateType: r.uom,
             carVol: lpg.railCarVol,
@@ -206,20 +207,20 @@ public class Processes {
                 ELSE 0
             END,
             currency: r.currency,
-            exchRate: CASE 
-                WHEN r.currency = $currency THEN 1 
+            exchRate: CASE
+                WHEN r.currency = $currency THEN 1
                 WHEN r.currency = 'USD' AND $currency = 'CAD' THEN exch1.rate
                 WHEN r.currency = 'CAD' AND $currency = 'USD' THEN exch2.rate
             END,
             carrier: r.carrier,
             route: r.route,
             minCars: r.min_cars,
-            carOwner: CASE 
-                WHEN r.car_owner_shipper AND NOT r.car_owner_carrier 
+            carOwner: CASE
+                WHEN r.car_owner_shipper AND NOT r.car_owner_carrier
                     THEN 'PVT'
                 WHEN NOT r.car_owner_shipper AND r.car_owner_carrier
                     THEN 'RR'
-                WHEN r.car_owner_shipper AND r.car_owner_carrier 
+                WHEN r.car_owner_shipper AND r.car_owner_carrier
                     THEN 'RR/PVT'
                 ELSE 'OTHER'
             END,
@@ -231,31 +232,31 @@ public class Processes {
             WHEN 'GAM' THEN 302.114803
         END AS uomConvRate
 
-
-        WITH ol, dl, splcs, lpg,
+        WITH ol, dl, splcs, interchanges, lpg,
         [x IN range(0,size(rateMaps)-1)|
             {
                 rate: rateMaps[x].perTonRate * rateMaps[x].exchRate / uomConvRate
                 , carrier: fuels[x].carrier
-                , fsc: fuels[x].rate * rateMaps[x].exchRate / uomConvRate
-                , fscRate: fuels[x].baseFuel * rateMaps[x].exchRate / uomConvRate
+                , document: rateMaps[x].document
                 , dist: dist[x]
+                , fscVal: round(fuels[x].rate * dist[x] * rateMaps[x].exchRate / uomConvRate, 4)
                 , route: rateMaps[x].route
                 , exp: rateMaps[x].expiration
                 , minCars: rateMaps[x].minCars
                 , carOwner: rateMaps[x].carOwner
             }
         ] AS legs
-        
-        
-        WITH ol, dl, legs[0].minCars AS minCars, legs[0].carOwner AS carOwner, legs, lpg, splcs
-        , round(reduce(price = 0, x IN legs | price + ((x.rate + (x.fsc * x.dist)))),4) AS freight
-        , round(reduce(dist = 0, m IN legs | dist + m.dist),0) AS totalDist
+
+
+        WITH ol, dl, legs[0].minCars AS minCars, legs[0].carOwner AS carOwner, legs, lpg, splcs, interchanges
+        , round( reduce( price = 0, x IN legs | price + x.rate + x.fscVal ),4 ) AS freight
+        , round( reduce( dist = 0, m IN legs | dist + m.dist ),0 ) AS totalDist
         ORDER BY freight
-        
-        
+
+
         WITH minCars, ol, dl, lpg
         , collect(splcs)[0] AS splcs
+        , collect(interchanges)[0] AS interchanges
         , collect(legs)[0] AS legs
         , collect(freight)[0] AS freight
         , collect(carOwner)[0] AS carOwner
@@ -267,61 +268,34 @@ public class Processes {
         , dl
         , lpg
         , minCars
+        , carOwner
         , methanolRailLeaseFee AS fees
         , round((freight + methanolRailLeaseFee)/totalDist, 4) AS rate
         , 'MI' AS rateFactor
         , round(freight + methanolRailLeaseFee, 4) AS freight
         , legs
         , splcs
-        
-        
+        , interchanges
+
         WITH ol
         , dl
         , lpg
         , {
             id: ol.id + '|#|' + dl.id + '|#|' + lpg.name + '|#|' + minCars
             , splcs			: splcs
+            , interchanges  : interchanges
             , fees			: fees
             , rate			: rate
-            , rateFactor	: rateFactor
             , freight		: freight
-            , curr			: $currency
-            , rateUom		: $uom
             , distUom		: 'MI'
-            , fscRateUom	: '/' + $uom + '/MI'
-            
+            , carOwner      : carOwner
             , rates			: [x IN legs|x.rate]
             , carriers		: [x IN legs|x.carrier]
-            
-            , rate1			: legs[0].rate
-            , carrier1		: legs[0].carrier
-            , fsc1			: legs[0].fsc
-            , fscRate1		: legs[0].fscRate
-            , dist1			: legs[0].dist
-            , route1		: legs[0].route
-            , exp1			: legs[0].exp
-            , minCars1		: legs[0].minCars
-            , carOwner1		: legs[0].carOwner
-
-            , rate2			: legs[1].rate
-            , carrier2		: legs[1].carrier
-            , fsc2			: legs[1].fsc
-            , fscRate2		: legs[1].fscRate
-            , dist2			: legs[1].dist
-            , route2		: legs[1].route
-            , exp2			: legs[1].exp
-            , minCars2		: legs[1].minCars
-            , carOwner2		: legs[1].carOwner
-
-            , rate3			: legs[2].rate
-            , carrier3		: legs[2].carrier
-            , fsc3			: legs[2].fsc
-            , fscRate3		: legs[2].fscRate
-            , dist3			: legs[2].dist
-            , route3		: legs[2].route
-            , exp3			: legs[2].exp
-            , minCars3		: legs[2].minCars
-            , carOwner3		: legs[2].carOwner
+            , fsc           : [x IN legs|x.fscVal]
+            , dists         : [x IN legs|x.dist]
+            , routes        : [x IN legs|x.route]
+            , expiration   : apoc.coll.min([x IN legs|x.exp])
+            , minCars       : [x IN legs|x.minCars]
         } AS cacheProperties
         
         MERGE (rc:RailCache{id:cacheProperties.id})

@@ -1,2 +1,2 @@
-/processes/target
 *.class
+processes/target/

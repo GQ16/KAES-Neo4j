@@ -12,7 +12,7 @@ MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
 , (ol)-[:HAS_OUTBOUND]->(mo)
 WHERE ol <> dl
 
-MATCH path = SHORTEST 5 (rr2)(
+MATCH path = SHORTEST 3 (rr2)(
     ()-[:`UAN_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`UAN_TO`]-()
 ){0, 2}(rr1:RailRoute)-[:`UAN_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
 WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
