@@ -3,7 +3,7 @@ WHERE lpg.name = $product
 AND mo.id = 'RAIL'
 AND dl.id = $locationId
 
-MATCH (rr2:RailRoute)-[:`UAN_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
+MATCH (rr2:RailRoute)-[:`AMMONIA_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
 WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)
 
 MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
@@ -13,17 +13,17 @@ MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
 WHERE ol <> dl
 
 MATCH path = SHORTEST 3 (rr2)(
-    ()-[:`UAN_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`UAN_TO`]-()
-){0, 2}(rr1:RailRoute)-[:`UAN_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
+    ()-[:`AMMONIA_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`AMMONIA_TO`]-()
+){0, 2}(rr1:RailRoute)-[:`AMMONIA_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
 WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
 
-WITH DISTINCT ol, dl, lpg
+WITH DISTINCT ol, dl, lpg, s1, s2
 , reverse([r IN nodes(path) WHERE r:RailRoute]) AS routes
-, reverse([s2] + [x IN nodes(path) WHERE x:SPLC]) AS splcList
+, reverse([x IN nodes(path) WHERE x:SPLC AND x <> s1]) AS interchangeList
 WHERE 1=1
 AND all(x IN routes WHERE (x)-[:HAS_CURRENT_RATE]->())
 
-WITH *, size(routes) AS numberOfRoutes
+WITH *, size(routes) AS numberOfRoutes, [s1] + interchangeList + [s2] AS splcList
 
 CALL (routes, numberOfRoutes) {
         WITH routes, numberOfRoutes
@@ -87,74 +87,27 @@ CALL (routes, numberOfRoutes) {
         RETURN [rate1, rate2, rate3] AS rates
 }
 
-WITH ol, dl, routes, splcList, rates, lpg
-, COLLECT{
-    WITH apoc.coll.pairsMin(splcList) AS splcPairs, routes, range(1, numberOfRoutes) AS rowNums
-    WITH splcPairs, apoc.coll.zip(rowNums,routes) AS rowRoutes
-    WITH apoc.coll.zip(splcPairs,rowRoutes) AS splcPairRoutes
-    UNWIND splcPairRoutes AS splcPairRoute
-    WITH splcPairRoute[0] AS splcPair, splcPairRoute[1] AS rowRoute
-    WITH rowRoute[0] AS rowNum, rowRoute[1] AS route, splcPair[0] AS originSPLC, splcPair[1] AS destSPLC
+WITH ol, dl, routes, splcList, interchangeList, rates, lpg, numberOfRoutes
 
-    OPTIONAL MATCH (originSPLC)<-[:FROM_SPLC]-(r:RailMileage)-[:TO_SPLC]->(destSPLC)
+MATCH (cad:Currency {id:'CAD'})-[exch:HAS_EXCHANGE_RATE]->(usd:Currency {id:'USD'})
 
-    WITH rowNum, route, coalesce(r.distance,0) AS dist
-
-    , EXISTS{
-        (route)-[:HAS_ORIGIN_CARRIER]->(:Carrier)<-[:FROM_CARRIER]-(r)
-    } AS origCarrierMatches
-
-    , EXISTS{
-        (r)-[:TO_CARRIER]->(:Carrier)<-[:HAS_DESTINATION_CARRIER]-(route)
-    } AS destCarrierMatches
-
-    WITH route, dist
-    , CASE
-        WHEN origCarrierMatches AND destCarrierMatches THEN 1
-        WHEN origCarrierMatches OR destCarrierMatches THEN 2
-        ELSE 3
-    END AS mileageScore
-    ORDER BY rowNum, mileageScore //Must order by rowNum to preserve route order
-
-    WITH route, collect(dist)[0] AS selectedDist
-    RETURN selectedDist
-} AS dist
-
-, COLLECT{
-    UNWIND routes AS route
-    MATCH (route)-[:HAS_CARRIER]->(ca:Carrier)
-    OPTIONAL MATCH (ca)-[:HAS_CURRENT_FSC]->(rFSC:RailFSC)<-[:FOR_RAIL_FSC]-(fC:Currency)-[:FOR_RAIL_ROUTE]->(route)
-    , (rFSC)-[:FOR_PRODUCTGROUP]->(lpg)
-
-    RETURN {
-        carrier: ca.id
-        , baseFuel: coalesce(rFSC.rate, 0.0)
-        , rate: coalesce(round(rFSC.rate/lpg.railCarVol, 6), 0.0)
-    }
-} AS fuels
-
-MATCH (usd:Currency {id:'USD'})-[exch1:HAS_EXCHANGE_RATE]->(cad:Currency {id:'CAD'})
-MATCH (cad)-[exch2:HAS_EXCHANGE_RATE]->(usd)
-
-WITH DISTINCT ol, dl, fuels, lpg, dist
-, [s IN splcList| coalesce(s.r260,s.id)] AS routeSplcs
+WITH DISTINCT ol, dl, lpg
 , [s IN splcList| s.id] AS splcs
+, [i IN interchangeList| i.r260] AS interchanges
 , [r IN rates| {
+    document: r.document,
     baseRate: r.rate,
-    rateType: r.uom,
-    carVol: lpg.railCarVol,
-    perTonRate: CASE toLower(r.uom)
-        WHEN 'ton' THEN r.rate
-        WHEN 'car' THEN round(r.rate / lpg.railCarVol, 3)
+    baseRateUom: r.uom,
+    baseRateCurrency: r.currency,
+    exchRate: CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END,
+    usdPerShortTonRate: CASE toLower(r.uom)
+        WHEN 'ton' THEN r.rate * CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END
+        WHEN 'car' THEN round(r.rate * CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END / lpg.railCarVol, 3)
         ELSE 0
     END,
-    currency: r.currency,
-    exchRate: CASE
-        WHEN r.currency = $currency THEN 1
-        WHEN r.currency = 'USD' AND $currency = 'CAD' THEN exch1.rate
-        WHEN r.currency = 'CAD' AND $currency = 'USD' THEN exch2.rate
-    END,
     carrier: r.carrier,
+    originCarrier: r.origin_carrier,
+    destinationCarrier: r.destination_carrier,
     route: r.route,
     minCars: r.min_cars,
     carOwner: CASE
@@ -166,105 +119,41 @@ WITH DISTINCT ol, dl, fuels, lpg, dist
             THEN 'RR/PVT'
         ELSE 'OTHER'
     END,
-    expiration: r.rate_expiration
-}] AS rateMaps,
-CASE $uom
-    WHEN 'ST' THEN 1
-    WHEN 'MT' THEN 1/1.10231
-    WHEN 'GAM' THEN 302.114803
-END AS uomConvRate
+    expiration: coalesce(r.rate_expiration, date('2099-01-01'))
+}] AS rateMaps
 
+WITH ol, dl, rateMaps[0].minCars AS minCars, rateMaps[0].carOwner AS carOwner, rateMaps, lpg, splcs, interchanges
+, round( reduce( price = 0, x IN rateMaps | price + x.usdPerShortTonRate ),4 ) AS rateSum
+ORDER BY carOwner DESC, rateSum
 
-WITH ol, dl, splcs, lpg,
-[x IN range(0,size(rateMaps)-1)|
-    {
-        rate: rateMaps[x].perTonRate * rateMaps[x].exchRate / uomConvRate
-        , carrier: fuels[x].carrier
-        , fsc: fuels[x].rate * rateMaps[x].exchRate / uomConvRate
-        , fscRate: fuels[x].baseFuel * rateMaps[x].exchRate / uomConvRate
-        , dist: dist[x]
-        , route: rateMaps[x].route
-        , exp: rateMaps[x].expiration
-        , minCars: rateMaps[x].minCars
-        , carOwner: rateMaps[x].carOwner
-    }
-] AS legs
-
-
-WITH ol, dl, legs[0].minCars AS minCars, legs[0].carOwner AS carOwner, legs, lpg, splcs
-, round(reduce(price = 0, x IN legs | price + ((x.rate + (x.fsc * x.dist)))),4) AS freight
-, round(reduce(dist = 0, m IN legs | dist + m.dist),0) AS totalDist
-ORDER BY freight
-
-
-WITH minCars, ol, dl, lpg
-, collect(splcs)[0] AS splcs
-, collect(legs)[0] AS legs
-, collect(freight)[0] AS freight
+WITH ol, dl, lpg, minCars
 , collect(carOwner)[0] AS carOwner
-, collect(totalDist)[0] AS totalDist
-, CASE WHEN $product = 'METHANOL' AND $uom = 'GAM' THEN 0.035 ELSE 0 END AS methanolRailLeaseFee
-
-
-WITH ol
-, dl
-, lpg
-, minCars
-, methanolRailLeaseFee AS fees
-, round((freight + methanolRailLeaseFee)/totalDist, 4) AS rate
-, 'MI' AS rateFactor
-, round(freight + methanolRailLeaseFee, 4) AS freight
-, legs
-, splcs
-
+, collect(splcs)[0] AS splcs
+, collect(interchanges)[0] AS interchanges
+, collect(rateMaps)[0] AS legs
 
 WITH ol
 , dl
 , lpg
 , {
     id: ol.id + '|#|' + dl.id + '|#|' + lpg.name + '|#|' + minCars
-    , splcs			: splcs
-    , fees			: fees
-    , rate			: rate
-    , rateFactor	: rateFactor
-    , freight		: freight
-    , curr			: $currency
-    , rateUom		: $uom
-    , distUom		: 'MI'
-    , fscRateUom	: '/' + $uom + '/MI'
-
-    , rates			: [x IN legs|x.rate]
-    , carriers		: [x IN legs|x.carrier]
-
-    , rate1			: legs[0].rate
-    , carrier1		: legs[0].carrier
-    , fsc1			: legs[0].fsc
-    , fscRate1		: legs[0].fscRate
-    , dist1			: legs[0].dist
-    , route1		: legs[0].route
-    , exp1			: legs[0].exp
-    , minCars1		: legs[0].minCars
-    , carOwner1		: legs[0].carOwner
-
-    , rate2			: legs[1].rate
-    , carrier2		: legs[1].carrier
-    , fsc2			: legs[1].fsc
-    , fscRate2		: legs[1].fscRate
-    , dist2			: legs[1].dist
-    , route2		: legs[1].route
-    , exp2			: legs[1].exp
-    , minCars2		: legs[1].minCars
-    , carOwner2		: legs[1].carOwner
-
-    , rate3			: legs[2].rate
-    , carrier3		: legs[2].carrier
-    , fsc3			: legs[2].fsc
-    , fscRate3		: legs[2].fscRate
-    , dist3			: legs[2].dist
-    , route3		: legs[2].route
-    , exp3			: legs[2].exp
-    , minCars3		: legs[2].minCars
-    , carOwner3		: legs[2].carOwner
+    , splcs			        : splcs
+    , interchanges          : interchanges
+    , carOwner              : carOwner
+    , minCars               : minCars
+    , expiration            : [x IN legs|x.expiration]
+    , documents             : [x IN legs|x.document]
+    , baseRates             : [x IN legs|x.baseRate]
+    , baseRateUoms          : [x IN legs|x.baseRateUom]
+    , baseRateCurrencies    : [x IN legs|x.baseRateCurrency]
+    , exchRates             : [x IN legs|x.exchRate]
+    , usdPerShortTonRates   : [x IN legs|x.usdPerShortTonRate]
+    , carriers		        : [x IN legs|x.carrier]
+    , originCarriers        : [x IN legs|x.originCarrier]
+    , destinationCarriers   : [x IN legs|x.destinationCarrier]
+    , routes                : [x IN legs|x.route]
+    , miles                 : []
+    , fscs                  : []
 } AS cacheProperties
 
 MERGE (rc:RailCache{id:cacheProperties.id})

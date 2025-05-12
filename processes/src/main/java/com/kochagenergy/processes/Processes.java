@@ -24,7 +24,7 @@ public class Processes {
     static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
-    static String product = "UAN";
+    static String product = "AMMONIA";
     static String currency = "USD";
     static String uom = "ST";
 
@@ -33,7 +33,7 @@ public class Processes {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
-            // test();
+            test();
             railCache(driver);
             // truckCache(driver);
 
@@ -144,75 +144,27 @@ public class Processes {
                 RETURN [rate1, rate2, rate3] AS rates
         }
 
-        WITH ol, dl, routes, splcList, interchangeList, rates, lpg
-        , COLLECT{
-            WITH apoc.coll.pairsMin(splcList) AS splcPairs, routes, range(1, numberOfRoutes) AS rowNums
-            WITH splcPairs, apoc.coll.zip(rowNums,routes) AS rowRoutes
-            WITH apoc.coll.zip(splcPairs,rowRoutes) AS splcPairRoutes
-            UNWIND splcPairRoutes AS splcPairRoute
-            WITH splcPairRoute[0] AS splcPair, splcPairRoute[1] AS rowRoute
-            WITH rowRoute[0] AS rowNum, rowRoute[1] AS route, splcPair[0] AS originSPLC, splcPair[1] AS destSPLC
+        WITH ol, dl, routes, splcList, interchangeList, rates, lpg, numberOfRoutes
 
-            OPTIONAL MATCH (originSPLC)<-[:FROM_SPLC]-(r:RailMileage)-[:TO_SPLC]->(destSPLC)
+        MATCH (cad:Currency {id:'CAD'})-[exch:HAS_EXCHANGE_RATE]->(usd:Currency {id:'USD'})
 
-            WITH rowNum, route, coalesce(r.distance,0) AS dist
-
-            , EXISTS{
-                (route)-[:HAS_ORIGIN_CARRIER]->(:Carrier)<-[:FROM_CARRIER]-(r)
-            } AS origCarrierMatches
-
-            , EXISTS{
-                (r)-[:TO_CARRIER]->(:Carrier)<-[:HAS_DESTINATION_CARRIER]-(route)
-            } AS destCarrierMatches
-
-            WITH route, dist
-            , CASE
-                WHEN origCarrierMatches AND destCarrierMatches THEN 1
-                WHEN origCarrierMatches OR destCarrierMatches THEN 2
-                ELSE 3
-            END AS mileageScore
-            ORDER BY rowNum, mileageScore //Must order by rowNum to preserve route order
-
-            WITH route, collect(dist)[0] AS selectedDist
-            RETURN selectedDist
-        } AS dist
-
-        , COLLECT{
-            UNWIND routes AS route
-            MATCH (route)-[:HAS_CARRIER]->(ca:Carrier)
-            OPTIONAL MATCH (ca)-[:HAS_CURRENT_FSC]->(rFSC:RailFSC)<-[:FOR_RAIL_FSC]-(fC:Currency)-[:FOR_RAIL_ROUTE]->(route)
-            , (rFSC)-[:FOR_PRODUCTGROUP]->(lpg)
-
-            RETURN {
-                carrier: ca.id
-                , baseFuel: coalesce(rFSC.rate, 0.0)
-                , rate: coalesce(round(rFSC.rate/lpg.railCarVol, 6), 0.0)
-            }
-        } AS fuels
-
-        MATCH (usd:Currency {id:'USD'})-[exch1:HAS_EXCHANGE_RATE]->(cad:Currency {id:'CAD'})
-        MATCH (cad)-[exch2:HAS_EXCHANGE_RATE]->(usd)
-
-        WITH DISTINCT ol, dl, fuels, lpg, dist
+        WITH DISTINCT ol, dl, lpg
         , [s IN splcList| s.id] AS splcs
         , [i IN interchangeList| i.r260] AS interchanges
         , [r IN rates| {
             document: r.document,
             baseRate: r.rate,
-            rateType: r.uom,
-            carVol: lpg.railCarVol,
-            perTonRate: CASE toLower(r.uom)
-                WHEN 'ton' THEN r.rate
-                WHEN 'car' THEN round(r.rate / lpg.railCarVol, 3)
+            baseRateUom: r.uom,
+            baseRateCurrency: r.currency,
+            exchRate: CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END,
+            usdPerShortTonRate: CASE toLower(r.uom)
+                WHEN 'ton' THEN r.rate * CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END
+                WHEN 'car' THEN round(r.rate * CASE WHEN r.currency = 'CAD' THEN exch.rate ELSE 1 END / lpg.railCarVol, 3)
                 ELSE 0
             END,
-            currency: r.currency,
-            exchRate: CASE
-                WHEN r.currency = $currency THEN 1
-                WHEN r.currency = 'USD' AND $currency = 'CAD' THEN exch1.rate
-                WHEN r.currency = 'CAD' AND $currency = 'USD' THEN exch2.rate
-            END,
             carrier: r.carrier,
+            originCarrier: r.origin_carrier,
+            destinationCarrier: r.destination_carrier,
             route: r.route,
             minCars: r.min_cars,
             carOwner: CASE
@@ -224,78 +176,41 @@ public class Processes {
                     THEN 'RR/PVT'
                 ELSE 'OTHER'
             END,
-            expiration: r.rate_expiration
-        }] AS rateMaps,
-        CASE $uom
-            WHEN 'ST' THEN 1
-            WHEN 'MT' THEN 1/1.10231
-            WHEN 'GAM' THEN 302.114803
-        END AS uomConvRate
+            expiration: coalesce(r.rate_expiration, date('2099-01-01'))
+        }] AS rateMaps
 
-        WITH ol, dl, splcs, interchanges, lpg,
-        [x IN range(0,size(rateMaps)-1)|
-            {
-                rate: rateMaps[x].perTonRate * rateMaps[x].exchRate / uomConvRate
-                , carrier: fuels[x].carrier
-                , document: rateMaps[x].document
-                , dist: dist[x]
-                , fscVal: round(fuels[x].rate * dist[x] * rateMaps[x].exchRate / uomConvRate, 4)
-                , route: rateMaps[x].route
-                , exp: rateMaps[x].expiration
-                , minCars: rateMaps[x].minCars
-                , carOwner: rateMaps[x].carOwner
-            }
-        ] AS legs
+        WITH ol, dl, rateMaps[0].minCars AS minCars, rateMaps[0].carOwner AS carOwner, rateMaps, lpg, splcs, interchanges
+        , round( reduce( price = 0, x IN rateMaps | price + x.usdPerShortTonRate ),4 ) AS rateSum
+        ORDER BY carOwner DESC, rateSum
 
-
-        WITH ol, dl, legs[0].minCars AS minCars, legs[0].carOwner AS carOwner, legs, lpg, splcs, interchanges
-        , round( reduce( price = 0, x IN legs | price + x.rate + x.fscVal ),4 ) AS freight
-        , round( reduce( dist = 0, m IN legs | dist + m.dist ),0 ) AS totalDist
-        ORDER BY freight
-
-
-        WITH minCars, ol, dl, lpg
+        WITH ol, dl, lpg, minCars
+        , collect(carOwner)[0] AS carOwner
         , collect(splcs)[0] AS splcs
         , collect(interchanges)[0] AS interchanges
-        , collect(legs)[0] AS legs
-        , collect(freight)[0] AS freight
-        , collect(carOwner)[0] AS carOwner
-        , collect(totalDist)[0] AS totalDist
-        , CASE WHEN $product = 'METHANOL' AND $uom = 'GAM' THEN 0.035 ELSE 0 END AS methanolRailLeaseFee
-
-
-        WITH ol
-        , dl
-        , lpg
-        , minCars
-        , carOwner
-        , methanolRailLeaseFee AS fees
-        , round((freight + methanolRailLeaseFee)/totalDist, 4) AS rate
-        , 'MI' AS rateFactor
-        , round(freight + methanolRailLeaseFee, 4) AS freight
-        , legs
-        , splcs
-        , interchanges
+        , collect(rateMaps)[0] AS legs
 
         WITH ol
         , dl
         , lpg
         , {
             id: ol.id + '|#|' + dl.id + '|#|' + lpg.name + '|#|' + minCars
-            , splcs			: splcs
-            , interchanges  : interchanges
-            , fees			: fees
-            , rate			: rate
-            , freight		: freight
-            , distUom		: 'MI'
-            , carOwner      : carOwner
-            , rates			: [x IN legs|x.rate]
-            , carriers		: [x IN legs|x.carrier]
-            , fsc           : [x IN legs|x.fscVal]
-            , dists         : [x IN legs|x.dist]
-            , routes        : [x IN legs|x.route]
-            , expiration   : apoc.coll.min([x IN legs|x.exp])
-            , minCars       : [x IN legs|x.minCars]
+            , splcs			        : splcs
+            , interchanges          : interchanges
+            , carOwner              : carOwner
+            , minCars               : minCars
+            , expiration            : [x IN legs|x.expiration]
+            , documents             : [x IN legs|x.document]
+            , baseRates             : [x IN legs|x.baseRate]
+            , baseRateUoms          : [x IN legs|x.baseRateUom]
+            , baseRateCurrencies    : [x IN legs|x.baseRateCurrency]
+            , exchRates             : [x IN legs|x.exchRate]
+            , usdPerShortTonRates   : [x IN legs|x.usdPerShortTonRate]
+            , carriers		        : [x IN legs|x.carrier]
+            , originCarriers        : [x IN legs|x.originCarrier]
+            , destinationCarriers   : [x IN legs|x.destinationCarrier]
+            , routes                : [x IN legs|x.route]
+            , miles                 : []
+            , fscs                  : []
         } AS cacheProperties
         
         MERGE (rc:RailCache{id:cacheProperties.id})
@@ -310,9 +225,20 @@ public class Processes {
     }
 
     private static void railCache(final Driver driver) {
+        Map<String, Integer> locationHopsMap = getLocationHopsMap(driver);
+        System.out.println("Location Count: " + locationHopsMap.size());
+        
+        establishCacheForDestinations(driver, locationHopsMap);
+        setFullPathRouteProperties(driver);
+        setMilesList(driver);
+        setFscsList(driver);
+        setFreightAndMileageTotals(driver);
+    }
+
+    private static Map<String, Integer> getLocationHopsMap(final Driver driver) {
         Map<String, Integer> locationHopsMap = new HashMap<>();
         try (Session session = driver.session()) {
-
+            //Delete existing cache for product
             session.run("""
                 MATCH (lpg:LogisticsProductGroup)-[:FOR_RAIL_CACHE]->(rc:RailCache)
                 WHERE lpg.name = $product
@@ -321,35 +247,39 @@ public class Processes {
                 """, Values.parameters("product", product));
             System.out.println(product + " Rail Cache Has been deleted.");
 
-            session
-                    .run("""
-                        MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
-                        WHERE lpg.name = $product
-                        AND mo.id = 'RAIL'
+            //Get list of destinations and their qpp maxes
+            session.run("""
+                MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
+                WHERE lpg.name = $product
+                AND mo.id = 'RAIL'
 
-                        RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
-                        ORDER BY locationId
-                        """, Values.parameters("product", product))
-                    .forEachRemaining(record -> {
-                        locationHopsMap.put(
-                                record.get("locationId").asString()
-                                , record.get("qppMax").asInt()
-                        );
-                    });
+                RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
+                ORDER BY locationId
+                """, Values.parameters("product", product))
+            .forEachRemaining(record -> {
+                locationHopsMap.put(
+                        record.get("locationId").asString()
+                        , record.get("qppMax").asInt()
+                );
+            });
         } catch (ClientException e) {
             System.err.println("Error Retrieving Location and QPP Maxes");
             System.err.println(e);
         }
-            
-        System.out.println("Location Count: " + locationHopsMap.size());
+        return locationHopsMap;
+    }
+
+    private static void establishCacheForDestinations(final Driver driver, Map<String, Integer> locationHopsMap) {
         locationHopsMap.forEach((locationId, qppMax) -> {
             try (Session session = driver.session()) {
-                session.run(getRailCacheQueryString(product, qppMax),
-                        Values.parameters(
-                                "locationId", locationId
-                                , "product", product
-                                , "uom", uom
-                                , "currency", currency)
+                session.run(
+                    getRailCacheQueryString(product, qppMax),
+                    Values.parameters(
+                        "locationId", locationId
+                        , "product", product
+                        , "uom", uom
+                        , "currency", currency
+                    )
                 );
                 counter++;
                 System.out.println("Rail Compelted: " + String.valueOf(counter) + "/" + locationHopsMap.size());
@@ -359,51 +289,110 @@ public class Processes {
                 System.err.println(e);
             }
         });
+    }
 
+    private static void setFullPathRouteProperties(final Driver driver) {
         try (Session session = driver.session()) {
             //Set full path route property for 1-leg moves
             session.run("""
-            MATCH (rc:RailCache)
-            WHERE rc.rate2 IS NULL AND rc.rate3 IS NULL
-            SET rc.route = rc.route1;
-            """);
+                MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                WHERE size(rc.splcs) = 2
+                SET rc.route = rc.routes[0];
+                """, Values.parameters("product", product));
 
             //Set full path route property for 2-leg rule 11 moves
             session.run("""
-            MATCH (rc:RailCache)
-            WHERE rc.rate2 IS NOT NULL AND rc.rate3 IS NULL
-            WITH rc, rc.splcs[1] AS interchange
-            CALL (interchange) {
-                MATCH (s:SPLC{id:interchange})
-                MATCH (s)<-[:IN_SPLC]-(rs:RailStation)
-                WITH DISTINCT s, rs.abbreviation AS abb
-                RETURN s, collect(abb)[0] AS stationAbbreviation
-            }
-            SET rc.route = rc.route1 + '-' + coalesce(s.r260,stationAbbreviation) + '-' + rc.route2;
-            """);
+                MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                WHERE size(rc.splcs) = 3
+                SET rc.route = rc.routes[0] + '-' + rc.interchanges[0] + '-' + rc.routes[1];
+                """, Values.parameters("product", product));
 
             //Set full path route property for 3-leg rule 11 moves
             session.run("""
-            MATCH (rc:RailCache)
-            WHERE rc.rate3 IS NOT NULL
-            WITH rc, rc.splcs[1] AS interchange, rc.splcs[2] AS interchange2
-            CALL (interchange) {
-                MATCH (s:SPLC{id:interchange})
-                MATCH (s)<-[:IN_SPLC]-(rs:RailStation)
-                WITH DISTINCT s, rs.abbreviation AS abb
-                RETURN s, collect(abb)[0] AS stationAbbreviation
-            }
-            CALL (interchange2) {
-                MATCH (s2:SPLC{id:interchange2})
-                MATCH (s2)<-[:IN_SPLC]-(rs:RailStation)
-                WITH DISTINCT s2, rs.abbreviation AS abb
-                RETURN s2, collect(abb)[0] AS station2Abbreviation
-            }
-            SET rc.route = rc.route1 + '-' + coalesce(s.r260,stationAbbreviation) + '-' + rc.route2 + '-' + coalesce(s2.r260,station2Abbreviation) + '-' + rc.route3;
-            """);
-            System.out.println("Rail Route Property Setting Compelted");
+                MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                WHERE size(rc.splcs) = 4
+                SET rc.route = rc.routes[0] + '-' + rc.interchanges[0] + '-' + rc.routes[1] + '-' + rc.interchanges[1] + '-' + rc.routes[2];
+                """, Values.parameters("product", product));
+            System.out.println("RailCache route Property Setting Compelted");
         } catch (ClientException e) {
             System.err.println("Error Triggered by Rail Route Property Setting");
+            System.err.println(e);
+        }
+    }
+
+    private static void setMilesList(final Driver driver) {
+        try (Session session = driver.session()) {
+            for (int i = 0; i < 3; i++) {
+                session.run("""
+                    MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                    WHERE size(rc.splcs) > $iterator + 1
+
+                    WITH rc, rc.splcs[$iterator] AS s1, rc.splcs[$iterator + 1] AS s2, rc.originCarriers[$iterator] AS oc, rc.destinationCarriers[$iterator] AS dc
+
+                    MATCH (ds:SPLC{id:s2})
+                    MATCH (os:SPLC{id:s1})
+                    OPTIONAL MATCH (os)<-[:FROM_SPLC]-(rm:RailMileage)-[:TO_SPLC]->(ds)
+                    WITH rc, coalesce(rm.distance,0) AS dist
+                    , EXISTS{
+                        (:Carrier{id:oc})<-[:FROM_CARRIER]-(rm)
+                    } AS origCarrierMatches
+                    , EXISTS{
+                        (rm)-[:TO_CARRIER]->(:Carrier{id:dc})
+                    } AS destCarrierMatches
+
+                    WITH rc, dist, CASE
+                        WHEN origCarrierMatches AND destCarrierMatches THEN 1
+                        WHEN origCarrierMatches OR destCarrierMatches THEN 2
+                        ELSE 3
+                    END AS mileageScore
+                    ORDER BY mileageScore
+
+                    WITH rc, collect(dist)[0] AS bestDist
+                    SET rc.miles = rc.miles + [bestDist]
+                    """, Values.parameters("iterator", i, "product", product));
+            }
+            System.out.println("RailCache miles Property Setting Compelted");
+        } catch (ClientException e) {
+            System.err.println("Error Triggered by RailCache miles Setting");
+            System.err.println(e);
+        }
+    }
+
+    private static void setFscsList(final Driver driver) {
+        try (Session session = driver.session()) {
+            for (int i = 0; i < 3; i++) {
+                session.run("""
+                    MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(lpg:LogisticsProductGroup{name:$product})
+                    WHERE size(rc.splcs) > $iterator + 1
+                    WITH rc, lpg, rc.carriers[$iterator] AS carrierId, rc.baseRateCurrencies[$iterator] AS currencyId
+                    MATCH (ca:Carrier{id:carrierId})
+                    MATCH (cu:Currency{id:currencyId})
+                    OPTIONAL MATCH (ca)-[:HAS_CURRENT_FSC]->(rFSC:RailFSC)<-[:FOR_RAIL_FSC]-(cu:Currency)
+                    , (rFSC)-[:FOR_PRODUCTGROUP]->(lpg)
+                    OPTIONAL MATCH (cu)-[exch:HAS_EXCHANGE_RATE]->(usd:Currency{id:'USD'})
+
+                    WITH rc, coalesce(rFSC.rate, 0.0) AS perCarPerMileFuel, coalesce(round(rFSC.rate/lpg.railCarVol, 6), 0.0) AS perShortTonPerMileFuel, coalesce(exch.rate, 1) AS exchangeRate
+                    WITH rc, round(perShortTonPerMileFuel * exchangeRate * rc.miles[0], 4) AS usdPerShortTonFuel
+                    SET rc.fscs = rc.fscs + [usdPerShortTonFuel]
+                    """, Values.parameters("iterator", i, "product", product));
+            }
+            System.out.println("RailCache fscs Property Setting Compelted");
+        } catch (ClientException e) {
+            System.err.println("Error Triggered by RailCache fscs Setting");
+            System.err.println(e);
+        }
+    }
+
+    private static void setFreightAndMileageTotals(final Driver driver) {
+        try (Session session = driver.session()) {
+            session.run("""
+                MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                SET rc.freight = round( reduce( price = 0, x IN range(0,size(rc.splcs)-2) | price + rc.usdPerShortTonRates[x] + rc.fscs[x] ),4 )
+                SET rc.totalMiles = reduce( dist = 0, x IN range(0,size(rc.splcs)-2) | dist + rc.miles[x] )
+                """, Values.parameters("product", product));
+            System.out.println("RailCache freight and totalMiles Set");
+        } catch (ClientException e) {
+            System.err.println("Error Triggered by RailCache freight and totalMiles Setting");
             System.err.println(e);
         }
     }
@@ -417,7 +406,8 @@ public class Processes {
                     RETURN tc",
                     "DETACH DELETE tc"
                 ,{params:{product:$product}})
-                """, Values.parameters("product", product));
+                """, Values.parameters("product", product)
+            );
             System.out.println(product + " Truck Cache Has been deleted.");
 
             List<String> zips = session.run("""
@@ -427,7 +417,8 @@ public class Processes {
                     // AND s.id = 'IL'
                     RETURN z.id AS zip ORDER BY zip DESC
                     """)
-                .list(record -> record.get(0).asString());
+                .list(record -> record.get(0).asString()
+            );
             
             System.out.println("Zip Count: " + zips.size());
             zips.forEach(zip -> {
