@@ -198,7 +198,7 @@ public class Processes {
             , interchanges          : interchanges
             , carOwner              : carOwner
             , minCars               : minCars
-            , expiration            : [x IN legs|x.expiration]
+            , expirations           : [x IN legs|x.expiration]
             , documents             : [x IN legs|x.document]
             , baseRates             : [x IN legs|x.baseRate]
             , baseRateUoms          : [x IN legs|x.baseRateUom]
