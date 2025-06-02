@@ -55,7 +55,7 @@ public class Processes {
         MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
         WHERE lpg.name = $product 
         AND mo.id = 'RAIL' 
-        AND dl.id = $locationId
+         AND dl.id = $locationId 
         
         MATCH (rr2:RailRoute)-[:`%s_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
         WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)
@@ -264,7 +264,7 @@ public class Processes {
                 MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
                 WHERE lpg.name = $product
                 AND mo.id = 'RAIL'
-                """ + (singleDestinationId != null ? "AND dl.id = $locationId" : "") + """
+                """ + (singleDestinationId != null ? " AND dl.id = $locationId " : "") + """
                 RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
                 ORDER BY locationId
                 """;
