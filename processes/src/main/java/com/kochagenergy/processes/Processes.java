@@ -21,10 +21,10 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services-dev.kaes.io";
+    static final String DB_URI = "neo4j+s://neo4j.data-services-uat.kaes.io";
     static final String DB_USER = "gehad_qaki";
     static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
-    static String product = "AMMONIA";
+    static String product = "UAN";
     static String currency = "USD";
     static String uom = "ST";
 
@@ -33,7 +33,7 @@ public class Processes {
             driver.verifyConnectivity();
             System.out.println("Connection established.");
 
-            test();
+            // test();
             railCache(driver);
             // truckCache(driver);
 
@@ -225,41 +225,61 @@ public class Processes {
     }
 
     private static void railCache(final Driver driver) {
-        Map<String, Integer> locationHopsMap = getLocationHopsMap(driver);
+        railCache(driver, null);
+    }
+
+    private static void railCache(final Driver driver, String singleDestinationId) {
+        Map<String, Integer> locationHopsMap = getLocationHopsMap(driver, singleDestinationId);
         System.out.println("Location Count: " + locationHopsMap.size());
         
         establishCacheForDestinations(driver, locationHopsMap);
-        setFullPathRouteProperties(driver);
-        setMilesList(driver);
-        setFscsList(driver);
-        setFreightAndMileageTotals(driver);
+        setFullPathRouteProperties(driver, singleDestinationId);
+        setMilesList(driver, singleDestinationId);
+        setFscsList(driver, singleDestinationId);
+        setFreightAndMileageTotals(driver, singleDestinationId);
     }
 
     private static Map<String, Integer> getLocationHopsMap(final Driver driver) {
+        return getLocationHopsMap(driver, null);
+    }
+
+    private static Map<String, Integer> getLocationHopsMap(final Driver driver, String singleDestinationId) {
         Map<String, Integer> locationHopsMap = new HashMap<>();
         try (Session session = driver.session()) {
-            //Delete existing cache for product
-            session.run("""
+            // Delete existing cache for product
+            String deleteQuery = """
                 MATCH (lpg:LogisticsProductGroup)-[:FOR_RAIL_CACHE]->(rc:RailCache)
                 WHERE lpg.name = $product
-
+                """ + (singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "") + """
                 DETACH DELETE rc
-                """, Values.parameters("product", product));
-            System.out.println(product + " Rail Cache Has been deleted.");
+                """;
+            
+            session.run(deleteQuery, 
+                singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product));
+            
+            System.out.println(product + " Rail Cache Has been deleted" + 
+                (singleDestinationId != null ? " for location " + singleDestinationId : "."));
 
-            //Get list of destinations and their qpp maxes
-            session.run("""
+            // Get list of destinations and their qpp maxes
+            String locationQuery = """
                 MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
                 WHERE lpg.name = $product
                 AND mo.id = 'RAIL'
-
+                """ + (singleDestinationId != null ? "AND dl.id = $locationId" : "") + """
                 RETURN DISTINCT dl.id AS locationId, CASE WHEN dl.threeLegsAllowed THEN 2 ELSE 1 END AS qppMax
                 ORDER BY locationId
-                """, Values.parameters("product", product))
+                """;
+
+            session.run(locationQuery,
+                singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product))
             .forEachRemaining(record -> {
                 locationHopsMap.put(
-                        record.get("locationId").asString()
-                        , record.get("qppMax").asInt()
+                        record.get("locationId").asString(),
+                        record.get("qppMax").asInt()
                 );
             });
         } catch (ClientException e) {
@@ -291,28 +311,39 @@ public class Processes {
         });
     }
 
-    private static void setFullPathRouteProperties(final Driver driver) {
+    private static void setFullPathRouteProperties(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
+            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            
             //Set full path route property for 1-leg moves
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
                 WHERE size(rc.splcs) = 2
+                """ + locationFilter + """
                 SET rc.route = rc.routes[0];
-                """, Values.parameters("product", product));
+                """, singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product));
 
             //Set full path route property for 2-leg rule 11 moves
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
                 WHERE size(rc.splcs) = 3
+                """ + locationFilter + """
                 SET rc.route = rc.routes[0] + '-' + rc.interchanges[0] + '-' + rc.routes[1];
-                """, Values.parameters("product", product));
+                """, singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product));
 
             //Set full path route property for 3-leg rule 11 moves
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
                 WHERE size(rc.splcs) = 4
+                """ + locationFilter + """
                 SET rc.route = rc.routes[0] + '-' + rc.interchanges[0] + '-' + rc.routes[1] + '-' + rc.interchanges[1] + '-' + rc.routes[2];
-                """, Values.parameters("product", product));
+                """, singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product));
             System.out.println("RailCache route Property Setting Compelted");
         } catch (ClientException e) {
             System.err.println("Error Triggered by Rail Route Property Setting");
@@ -320,13 +351,15 @@ public class Processes {
         }
     }
 
-    private static void setMilesList(final Driver driver) {
+    private static void setMilesList(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
+            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            
             for (int i = 0; i < 3; i++) {
                 session.run("""
                     MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
                     WHERE size(rc.splcs) > $iterator + 1
-
+                    """ + locationFilter + """
                     WITH rc, rc.splcs[$iterator] AS s1, rc.splcs[$iterator + 1] AS s2, rc.originCarriers[$iterator] AS oc, rc.destinationCarriers[$iterator] AS dc
 
                     MATCH (ds:SPLC{id:s2})
@@ -349,7 +382,9 @@ public class Processes {
 
                     WITH rc, collect(dist)[0] AS bestDist
                     SET rc.miles = rc.miles + [bestDist]
-                    """, Values.parameters("iterator", i, "product", product));
+                    """, singleDestinationId != null 
+                        ? Values.parameters("iterator", i, "product", product, "locationId", singleDestinationId)
+                        : Values.parameters("iterator", i, "product", product));
             }
             System.out.println("RailCache miles Property Setting Compelted");
         } catch (ClientException e) {
@@ -358,12 +393,15 @@ public class Processes {
         }
     }
 
-    private static void setFscsList(final Driver driver) {
+    private static void setFscsList(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
+            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            
             for (int i = 0; i < 3; i++) {
                 session.run("""
                     MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(lpg:LogisticsProductGroup{name:$product})
                     WHERE size(rc.splcs) > $iterator + 1
+                    """ + locationFilter + """
                     WITH rc, lpg, rc.carriers[$iterator] AS carrierId, rc.baseRateCurrencies[$iterator] AS currencyId
                     MATCH (ca:Carrier{id:carrierId})
                     MATCH (cu:Currency{id:currencyId})
@@ -374,7 +412,9 @@ public class Processes {
                     WITH rc, coalesce(rFSC.rate, 0.0) AS perCarPerMileFuel, coalesce(round(rFSC.rate/lpg.railCarVol, 6), 0.0) AS perShortTonPerMileFuel, coalesce(exch.rate, 1) AS exchangeRate
                     WITH rc, round(perShortTonPerMileFuel * exchangeRate * rc.miles[0], 4) AS usdPerShortTonFuel
                     SET rc.fscs = rc.fscs + [usdPerShortTonFuel]
-                    """, Values.parameters("iterator", i, "product", product));
+                    """, singleDestinationId != null 
+                        ? Values.parameters("iterator", i, "product", product, "locationId", singleDestinationId)
+                        : Values.parameters("iterator", i, "product", product));
             }
             System.out.println("RailCache fscs Property Setting Compelted");
         } catch (ClientException e) {
@@ -383,13 +423,18 @@ public class Processes {
         }
     }
 
-    private static void setFreightAndMileageTotals(final Driver driver) {
+    private static void setFreightAndMileageTotals(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
+            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
+                """ + locationFilter + """
                 SET rc.freight = round( reduce( price = 0, x IN range(0,size(rc.splcs)-2) | price + rc.usdPerShortTonRates[x] + rc.fscs[x] ),4 )
                 SET rc.totalMiles = reduce( dist = 0, x IN range(0,size(rc.splcs)-2) | dist + rc.miles[x] )
-                """, Values.parameters("product", product));
+                """, singleDestinationId != null 
+                    ? Values.parameters("product", product, "locationId", singleDestinationId)
+                    : Values.parameters("product", product));
             System.out.println("RailCache freight and totalMiles Set");
         } catch (ClientException e) {
             System.err.println("Error Triggered by RailCache freight and totalMiles Setting");

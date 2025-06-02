@@ -3,7 +3,7 @@ WHERE lpg.name = $product
 AND mo.id = 'RAIL'
 AND dl.id = $locationId
 
-MATCH (rr2:RailRoute)-[:`AMMONIA_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
+MATCH (rr2:RailRoute)-[:`UAN_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
 WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)
 
 MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
@@ -13,8 +13,8 @@ MATCH (ol:Location)-[:HAS_OCCUPANT]->(occ:Koch|Competitor)
 WHERE ol <> dl
 
 MATCH path = SHORTEST 3 (rr2)(
-    ()-[:`AMMONIA_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`AMMONIA_TO`]-()
-){0, 2}(rr1:RailRoute)-[:`AMMONIA_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
+    ()-[:`UAN_FROM`]->(stop2)-[:AT_INTERCHANGE]->(interchange)<-[:AT_INTERCHANGE]-(stop1)<-[:`UAN_TO`]-()
+){0, 2}(rr1:RailRoute)-[:`UAN_FROM`]->()-[:IN_SPLC]->(s1:SPLC)<-[:IN_SPLC]-(ol)
 WHERE (rr1)-[:HAS_ORIGIN_CARRIER]->()<-[:SERVED_BY]-(ol)
 
 WITH DISTINCT ol, dl, lpg, s1, s2
@@ -141,7 +141,7 @@ WITH ol
     , interchanges          : interchanges
     , carOwner              : carOwner
     , minCars               : minCars
-    , expiration            : [x IN legs|x.expiration]
+    , expirations           : [x IN legs|x.expiration]
     , documents             : [x IN legs|x.document]
     , baseRates             : [x IN legs|x.baseRate]
     , baseRateUoms          : [x IN legs|x.baseRateUom]
