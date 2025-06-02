@@ -21,9 +21,6 @@ import org.neo4j.driver.exceptions.ClientException;
 public class Processes {
 
     static int counter = 0;
-    static final String DB_URI = "neo4j+s://neo4j.data-services-uat.kaes.io";
-    static final String DB_USER = "gehad_qaki";
-    static final String DB_PASS = "frog-robin-jacket-halt-swim-7015";
     static String product = "UAN";
     static String currency = "USD";
     static String uom = "ST";
@@ -34,7 +31,7 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            railCache(driver);
+            railCache(driver, "bdf49050-fd01-4a1c-98c9-eca10ad4ae90");
             // truckCache(driver);
 
             driver.close();
@@ -250,7 +247,7 @@ public class Processes {
             String deleteQuery = """
                 MATCH (lpg:LogisticsProductGroup)-[:FOR_RAIL_CACHE]->(rc:RailCache)
                 WHERE lpg.name = $product
-                """ + (singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "") + """
+                """ + (singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "") + """
                 DETACH DELETE rc
                 """;
             
@@ -313,7 +310,7 @@ public class Processes {
 
     private static void setFullPathRouteProperties(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
-            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            String locationFilter = singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
             
             //Set full path route property for 1-leg moves
             session.run("""
@@ -353,7 +350,7 @@ public class Processes {
 
     private static void setMilesList(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
-            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            String locationFilter = singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
             
             for (int i = 0; i < 3; i++) {
                 session.run("""
@@ -395,7 +392,7 @@ public class Processes {
 
     private static void setFscsList(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
-            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            String locationFilter = singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
             
             for (int i = 0; i < 3; i++) {
                 session.run("""
@@ -425,7 +422,7 @@ public class Processes {
 
     private static void setFreightAndMileageTotals(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
-            String locationFilter = singleDestinationId != null ? "AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})}" : "";
+            String locationFilter = singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
             
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
