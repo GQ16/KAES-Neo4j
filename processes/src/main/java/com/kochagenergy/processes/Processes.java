@@ -422,7 +422,7 @@ public class Processes {
 
     private static void setFreightAndMileageTotals(final Driver driver, String singleDestinationId) {
         try (Session session = driver.session()) {
-            String locationFilter = singleDestinationId != null ? " AND EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
+            String locationFilter = singleDestinationId != null ? " WHERE EXISTS{MATCH (rc)-[:HAS_DESTINATION]->(:Location{id:$locationId})} " : "";
             
             session.run("""
                 MATCH (rc:RailCache)<-[:FOR_RAIL_CACHE]-(:LogisticsProductGroup{name:$product})
