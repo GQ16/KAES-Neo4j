@@ -1,4 +1,4 @@
-﻿Pipeline,Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End Date *,Rate Category,Season,Rec Loc Type,Rec Loc ID,Del Loc Type,Del Loc ID,Rate Type,Rate Unit,Charge Indicator,Rate
+﻿Pipeline,Rate Definition ID,Rate Schedule,Provider Charge Type,Charge Unit,Start Date,End Date,Rate Category,Season,Rec Loc Type,Rec Loc ID,Del Loc Type,Del Loc ID,Rate Type,Rate Unit,Charge Indicator,Rate
 GLGT,246718,FT,UTIL,Amount,6/1/2025,,TR,,Zone,WESTERN,Zone,EASTERN,Fixed,,Delivery,0.01176
 GLGT,246715,FT,UTIL,Amount,6/1/2025,,TR,,Zone,CENTRAL,Zone,CENTRAL,Fixed,,Delivery,0.00521
 GLGT,246714,FT,UTIL,Amount,6/1/2025,,TR,,Zone,EASTERN,Zone,WESTERN,Fixed,,Delivery,0.01176
