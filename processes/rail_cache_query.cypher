@@ -1,7 +1,7 @@
 MATCH (mo:Mode)<-[:HAS_INBOUND]-(dl:Location)-[:HAS_OCCUPANT]->()-[cs:CAN_STORE]->(lpg:LogisticsProductGroup)
 WHERE lpg.name = $product
 AND mo.id = 'RAIL'
-AND dl.id = $locationId
+ AND dl.id = $locationId
 
 MATCH (rr2:RailRoute)-[:`UAN_TO`]->(:RailStation|StationGroup)-[:IN_SPLC]->(s2:SPLC)<-[:IN_SPLC]-(dl)
 WHERE (rr2)-[:HAS_DESTINATION_CARRIER]->()<-[:SERVED_BY]-(dl)

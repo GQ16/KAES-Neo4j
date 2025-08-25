@@ -31,7 +31,10 @@ public class Processes {
             System.out.println("Connection established.");
 
             // test();
-            railCache(driver, "bdf49050-fd01-4a1c-98c9-eca10ad4ae90");
+            // var idList = List.of("b03aff81-fc63-4c77-84c1-df7f62050213", "64f4f6a7-d7ff-46a4-8d23-335ed43bc151", "2c7c8747-9cf6-4ea1-9346-cda1de224579", "2fe2d663-e28d-496f-a59a-78203fcf374f", "83a0e4da-37d8-4260-ba31-9222dfb3eaf5", "4b7bc799-35be-420b-9fea-657cde47bf0d", "6893605b-560e-4306-926f-74d6983846e6", "55d2aa63-74d4-4e94-b4f5-9132cbc345d8", "b922ef93-08ef-49c0-995e-804a949ca2db", "8fbd47ee-aafc-4a06-b353-9d94932d5549", "596303fb-6715-4489-be14-a2eddc5309a4", "e9236a6e-a1df-489d-aadb-77aca4bae13f", "a606a5fe-a0e2-406a-9d67-1c1890457db9", "4ddf65e6-9948-4ca3-98de-6512ead3c7da", "2d4cb56c-6885-4915-9a22-963fdd9b6d38", "0c38fd43-007c-49da-b561-b0e592073e06", "1a3ce37d-65f3-4c99-87ed-bcf2a295f1a5", "bdf49050-fd01-4a1c-98c9-eca10ad4ae90", "c4cbd1c6-70f3-4d52-b888-b7de09310eb4", "69d3a37b-9913-4b92-9267-037ad6b39526", "e060bf5c-d22d-456b-85f0-3c7aeba8712a", "f651e19b-fac4-46fa-9144-ef95819c9a60", "80f9bc5a-31f0-4d03-89a5-bcac439d0f6d", "05cc1555-12d1-43ec-8ec9-4c19985de1bf", "307c3dad-4079-4bc0-bc48-c8000662747a", "b9db1d96-3a40-4896-b37d-0ee2bab42396", "eec0d636-d22b-4e53-abfb-f83255fb3092", "1201a968-b6b2-4e9c-8419-451fd5f66f63", "e1be81c2-d2a9-4d5e-99ed-8cde5a4ef6ad", "7c33476f-78a7-4877-a688-223b77fbcca8", "4db2babe-6b25-4756-b365-3280ca047448", "b4dc71df-ee8f-4115-8e8e-5315b21ff5b1", "c5b5715b-6a26-4b1b-af27-f4ee636a9ade", "273150e8-ed48-4e3d-ab59-88f05d2b2e02", "9fcb3ab4-c1ca-4576-b84d-2ad39949e5be", "090d727d-0bf9-43cc-a3d8-32a6602c4643", "bf0b74e8-ab2f-49b1-bc7a-314d89624ab4", "3b4e8ec3-1507-44bd-ad5d-a38b6c31fcd7", "9e2da9da-2b22-4d61-92d6-c34f1c80c5d8", "3e334068-a072-4d2c-9fd4-93eca4b4b154", "7f5349c9-1d3b-4fe0-96fc-2d86b140f228", "5b670d83-7b85-429d-a97f-375cb3a52f2f", "e54caf1d-5195-4ade-80f1-561cffd54381", "98076397-ad3e-4b77-88f3-4117d81b4830", "5450073c-ee61-4f65-8e7e-76eff080655a", "aa46c64b-ce5f-4040-9801-14f962b31a94", "46ea87ea-b22d-4562-8d03-dc7502a97ce1", "09679fcd-685a-4d14-b5a0-8bcbf8fca2bd");
+            // idList.forEach(id -> railCache(driver, id));
+            railCache(driver, "d671c4a1-c09e-4843-a98d-7fdabf2aef59");
+            // railCache(driver);
             // truckCache(driver);
 
             driver.close();
@@ -407,7 +410,7 @@ public class Processes {
                     OPTIONAL MATCH (cu)-[exch:HAS_EXCHANGE_RATE]->(usd:Currency{id:'USD'})
 
                     WITH rc, coalesce(rFSC.rate, 0.0) AS perCarPerMileFuel, coalesce(round(rFSC.rate/lpg.railCarVol, 6), 0.0) AS perShortTonPerMileFuel, coalesce(exch.rate, 1) AS exchangeRate
-                    WITH rc, round(perShortTonPerMileFuel * exchangeRate * rc.miles[0], 4) AS usdPerShortTonFuel
+                    WITH rc, round(perShortTonPerMileFuel * exchangeRate * rc.miles[$iterator], 4) AS usdPerShortTonFuel
                     SET rc.fscs = rc.fscs + [usdPerShortTonFuel]
                     """, singleDestinationId != null 
                         ? Values.parameters("iterator", i, "product", product, "locationId", singleDestinationId)
